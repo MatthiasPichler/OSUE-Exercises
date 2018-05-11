@@ -1,0 +1,4 @@
+Otto ist ein Palindrom
+Rentner ist ein Palindrom
+neben ist ein Palindrom
+fast ist kein Palindrom
