@@ -13,31 +13,28 @@
 
 #include "../include/vertex.h"
 
-static int8_t node_add(node_t *this_n, vertex_t vertex)
+static int8_t node_add(node_t **this_n, vertex_t *vertex)
 {
-	if (this_n == NULL) {
+	if (*this_n == NULL) {
 		node_t *node = (node_t *)malloc(sizeof(node_t));
 		if (node == NULL) {
 			return -1;
 		}
 		node->left = node->right = NULL;
-		node->value = (vertex_t *)malloc(sizeof(vertex_t));
-		if (node->value == NULL) {
-			return -1;
-		}
-		memcpy(node->value, &vertex, sizeof(vertex_t));
-		this_n = node;
+		node->value = vertex;
+		*this_n = node;
 		return 0;
 	}
 
-	if (vertex.id < this_n->value->id) {
-		return node_add(this_n->left, vertex);
+	if (vertex->id < (*this_n)->value->id) {
+		return node_add(&((*this_n)->left), vertex);
 	} else {
-		return node_add(this_n->right, vertex);
+		return node_add(&((*this_n)->right), vertex);
 	}
 }
 
-static int8_t node_update_color(node_t *this_n, uint8_t id, color_t color)
+static int8_t
+node_update_color(node_t *this_n, const vid_t id, const color_t color)
 {
 	if (this_n == NULL) {
 		return -1;
@@ -55,7 +52,7 @@ static int8_t node_update_color(node_t *this_n, uint8_t id, color_t color)
 	}
 }
 
-static node_t *node_search(node_t *this_n, uint8_t id)
+static node_t *node_search(node_t *this_n, const vid_t id)
 {
 	if (this_n == NULL) {
 		return NULL;
@@ -81,7 +78,7 @@ static node_t *node_search_min(node_t *this_n)
 	return node_search_min(this_n->left);
 }
 
-static node_t *node_delete(node_t *this_n, uint8_t id)
+static node_t *node_delete(node_t *this_n, const vid_t id)
 {
 	if (this_n == NULL) {
 		return NULL;
@@ -115,7 +112,7 @@ static node_t *node_delete(node_t *this_n, uint8_t id)
 	return this_n;
 }
 
-static void node_print(node_t *this_n)
+static void node_print(const node_t *this_n)
 {
 	if (this_n == NULL) {
 		return;
@@ -125,7 +122,19 @@ static void node_print(node_t *this_n)
 	node_print(this_n->right);
 }
 
-vertex_tree_t *new_tree()
+vertex_t *new_vertex(const vid_t id)
+{
+	vertex_t *vertex = (vertex_t *)malloc(sizeof(vertex_t));
+	if (vertex != NULL) {
+		vertex->id = id;
+		vertex->color = undef;
+		vertex->edges = new_tree();
+	}
+
+	return vertex;
+}
+
+vertex_tree_t *new_tree(void)
 {
 	vertex_tree_t *tree = (vertex_tree_t *)malloc(sizeof(vertex_tree_t));
 	if (tree != NULL) {
@@ -134,12 +143,12 @@ vertex_tree_t *new_tree()
 	return tree;
 }
 
-int8_t tree_add(vertex_tree_t *tree, vertex_t vertex)
+int8_t tree_add(vertex_tree_t *tree, vertex_t *vertex)
 {
-	return node_add(tree->root, vertex);
+	return node_add(&(tree->root), vertex);
 }
 
-vertex_t *tree_delete(vertex_tree_t *tree, uint8_t id)
+vertex_t *tree_delete(vertex_tree_t *tree, const vid_t id)
 {
 	vertex_t *vertex = tree_search(tree, id);
 	if (vertex == NULL) {
@@ -151,7 +160,7 @@ vertex_t *tree_delete(vertex_tree_t *tree, uint8_t id)
 	return vertex;
 }
 
-vertex_t *tree_search(vertex_tree_t *tree, uint8_t id)
+vertex_t *tree_search(const vertex_tree_t *tree, const vid_t id)
 {
 	node_t *node = node_search(tree->root, id);
 	if (node == NULL) {
@@ -167,14 +176,15 @@ vertex_t *tree_search(vertex_tree_t *tree, uint8_t id)
 	return vertex;
 }
 
-int8_t tree_update_color(vertex_tree_t *tree, uint8_t id, color_t color)
+int8_t
+tree_update_color(vertex_tree_t *tree, const vid_t id, const color_t color)
 {
 	return node_update_color(tree->root, id, color);
 }
 
-void tree_print(vertex_tree_t *tree)
+void tree_print(const vertex_tree_t *tree)
 {
-	fprintf(stdout, "[\n");
+	fprintf(stdout, "[");
 	node_print(tree->root);
 	fprintf(stdout, "]\n");
 }

@@ -17,7 +17,7 @@ static graph_t *graph;
 static char *p_name = NULL;
 
 static int parse_args(int argc, char *argv[]);
-static int parse_edge(char *str, uint8_t **begin, uint8_t **end);
+static int parse_edge(char *str, vid_t **begin, vid_t **end);
 static void usage(void);
 
 int main(int argc, char *argv[])
@@ -28,6 +28,8 @@ int main(int argc, char *argv[])
 		usage();
 		exit(EXIT_FAILURE);
 	}
+
+	tree_print(graph->vertices);
 
 	return EXIT_SUCCESS;
 }
@@ -50,19 +52,32 @@ static int parse_args(int argc, char *argv[])
 
 
 	for (int i = 1; i < argc; i++) {
-		uint8_t *begin = NULL;
-		uint8_t *end = NULL;
+		vid_t *begin = NULL;
+		vid_t *end = NULL;
 		if (parse_edge(argv[i], &begin, &end) < 0) {
 			return -1;
 		}
-		// TODO
-		fprintf(stdout, "%d-%d\n", *begin, *end);
+
+		edge_t edge = {.begin = *begin, .end = *end};
+		if (add_edge(graph, edge) < 0) {
+			return -1;
+		}
 	}
 
 	return 0;
 }
 
-static int parse_edge(char *str, uint8_t **begin, uint8_t **end)
+/**
+ * @brief parses and validates the strings passed as arguments to the generator
+ * @param str the string to be parsed
+ * @param begin the pointer which holds the beginning vertex of the edge after
+ * parsing, if set to NULL it is initialized
+ * @param end the pointer which holds the ending vertex of the edge after
+ * parsing, if set to NULL it is initialized
+ * @return 0 on success, -1 on failure
+ *
+ */
+static int parse_edge(char *str, vid_t **begin, vid_t **end)
 {
 	bool del_f = false;
 	for (int i = 0; i < strlen(str); i++) {
@@ -83,27 +98,27 @@ static int parse_edge(char *str, uint8_t **begin, uint8_t **end)
 
 	// allocate return values if necessary
 	if (begin == NULL) {
-		begin = (uint8_t **)malloc(sizeof(uint8_t *));
+		begin = (vid_t **)malloc(sizeof(vid_t *));
 		if (begin == NULL) {
 			return -1;
 		}
 		*begin = NULL;
 	}
 	if (*begin == NULL) {
-		*begin = (uint8_t *)malloc(sizeof(uint8_t));
+		*begin = (vid_t *)malloc(sizeof(vid_t));
 		if (*begin == NULL) {
 			return -1;
 		}
 	}
 	if (end == NULL) {
-		end = (uint8_t **)malloc(sizeof(uint8_t *));
+		end = (vid_t **)malloc(sizeof(vid_t *));
 		if (end == NULL) {
 			return -1;
 		}
 		*end = NULL;
 	}
 	if (*end == NULL) {
-		*end = (uint8_t *)malloc(sizeof(uint8_t));
+		*end = (vid_t *)malloc(sizeof(vid_t));
 		if (*end == NULL) {
 			return -1;
 		}
@@ -119,7 +134,7 @@ static int parse_edge(char *str, uint8_t **begin, uint8_t **end)
 		return -1;
 	}
 
-	uint8_t n = strlen(str) - strlen(del);
+	int n = strlen(str) - strlen(del);
 	char *begin_str;
 	if ((begin_str = strndup(str, n)) == NULL) {
 		return -1;
