@@ -1,0 +1,11 @@
+{
+	"files.associations": {
+		"thread": "cpp",
+		"istream": "cpp",
+		"optional": "cpp",
+		"ostream": "cpp",
+		"ratio": "cpp",
+		"system_error": "cpp",
+		"type_traits": "cpp"
+	}
+}
