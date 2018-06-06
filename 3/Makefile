@@ -1,5 +1,5 @@
 CC = gcc
-DEFS = -D_DEFAULT_SOURCE -D_BSD_SOURCE -D_SVID_SOURCE -D_POSIX_C_SOURCE=200809L
+DEFS = -D_DEFAULT_SOURCE -D_BSD_SOURCE -D_SVID_SOURCE -D_POSIX_C_SOURCE=200809L -lpthread -lrt
 CFLAGS = -std=c99 -pedantic -Wall -g $(DEFS)
 
 IDIR =./include
@@ -12,7 +12,7 @@ $(OBJDIR)/%.o: $(SCRDIR)/%.c $(DEPS)
 
 COMMON_OBJ = ring_buffer.o
 
-_DEPS = vertex.h ring_buffer.h graph.h
+_DEPS = vertex.h ring_buffer.h graph.h common.h
 DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
 
 _GENERATOR_OBJ = generator.o graph.o vertex.o $(COMMON_OBJ)

@@ -8,18 +8,23 @@
 #ifndef COMMON_H
 #define COMMON_H
 
-#define DEBUG 1
+#define DEBUG false
+
+#include <stdlib.h>
+#include <stdbool.h>
+#include <stdio.h>
 
 #define debug_print(fmt, ...)       \
 	do {                            \
-		if (DEBUG)                  \
+		if (DEBUG) {                \
 			fprintf(                \
-				stderr,             \
+				stdout,             \
 				"%s:%d:%s(): " fmt, \
 				__FILE__,           \
 				__LINE__,           \
 				__func__,           \
 				__VA_ARGS__);       \
+		}                           \
 	} while (0)
 
 #endif  // COMMON_H

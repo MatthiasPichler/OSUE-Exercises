@@ -18,9 +18,10 @@
 #include "../include/graph.h"
 #include "../include/ring_buffer.h"
 
+static char *p_name = NULL;
 static edge_t *edges = NULL;
 static graph_t *graph = NULL;
-static char *p_name = NULL;
+static ring_buffer_t *buffer;
 
 static void sigint_handler(int signo);
 static void exit_handler(void);
@@ -51,29 +52,48 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
+	if ((buffer = new_ring_buffer()) == NULL) {
+		fprintf(stderr, "Could not open ring buffer\n");
+		exit(EXIT_FAILURE);
+	}
 
 	while (true) {
 
 		graph = new_graph(edges, argc - 1);
 		random_color(graph);
-		fprintf(stdout, "\n\nStart:\n");
-		graph_print(graph);
-
+		solution_t solution = {.size = 0ul};
+		size_t i = 0;
 		while (!graph_colored(graph)) {
-
 			edge_t edge;
 			if (find_edge(graph, &edge) < 0) {
 				break;
 			}
-			fprintf(stdout, "Removing: (%d,%d)\n", edge.begin, edge.end);
-			delete_edge(graph, edge);
-			fprintf(stdout, "Removed: (%d,%d)\n", edge.begin, edge.end);
-			graph_print(graph);
-		}
-		fprintf(stdout, "Solution found:\n");
-		graph_print(graph);
+			if (delete_edge(graph, edge) < 0) {
+				break;
+			}
+			solution.edges[i] = edge;
+			solution.size++;
 
-		sleep(1);
+			if (solution.size > MAX_SOLUTION_SIZE) {
+				fprintf(stdout, "%s: Max solution size exceeded\n", p_name);
+				break;
+			}
+		}
+
+		if (solution.size > MAX_SOLUTION_SIZE) {
+			continue;
+		}
+
+
+		if (block_write(buffer, solution) < 0) {
+			fprintf(stderr, "%s:. writing failed.\n", p_name);
+			exit(EXIT_FAILURE);
+		}
+
+		if (solution.size == 0) {
+			fprintf(stdout, "%s: Graph already 3colorable\n", p_name);
+			exit(EXIT_SUCCESS);
+		}
 	}
 
 
@@ -86,6 +106,7 @@ int main(int argc, char *argv[])
 static void exit_handler(void)
 {
 	free(graph);
+	clean_buffer(buffer);
 	fclose(stdout);
 }
 
@@ -95,7 +116,6 @@ static void exit_handler(void)
  */
 static void sigint_handler(int signo)
 {
-	exit_handler();
 	exit(EXIT_FAILURE);
 }
 
@@ -108,17 +128,14 @@ static void sigint_handler(int signo)
  */
 static int parse_args(int argc, char *argv[])
 {
-	debug_print("%s\n", "called");
 	p_name = argv[0];
 
 	if (argc < 2) {
-		debug_print("%s\n", "to few arguments");
 		return -1;
 	}
 
 	edges = (edge_t *)malloc(sizeof(edge_t) * (argc - 1));
 	if (edges == NULL) {
-		debug_print("%s\n", "malloc failed");
 		return -1;
 	}
 
@@ -126,7 +143,6 @@ static int parse_args(int argc, char *argv[])
 		vid_t begin;
 		vid_t end;
 		if (parse_edge(argv[i], &begin, &end) < 0) {
-			debug_print("%s: %s\n", "parse_edge failed", argv[i]);
 			return -1;
 		}
 
@@ -149,7 +165,7 @@ static int parse_args(int argc, char *argv[])
  */
 static int parse_edge(char *str, vid_t *begin, vid_t *end)
 {
-	debug_print("%s\n", "called");
+
 	if (begin == NULL || end == NULL) {
 		return -1;
 	}
@@ -158,19 +174,17 @@ static int parse_edge(char *str, vid_t *begin, vid_t *end)
 	for (int i = 0; i < strlen(str); i++) {
 		if (str[i] == '-') {
 			if (del_f) {
-				debug_print("%s\n", "too many delimiters");
+
 				return -1;
 			}
 			del_f = true;
 			continue;
 		}
 		if (str[i] < '0' || str[i] > '9') {
-			debug_print("%s: %c\n", "not a digit", str[i]);
 			return -1;
 		}
 	}
 	if (!del_f) {
-		debug_print("%s\n", "no delimiter");
 		return -1;
 	}
 
@@ -178,7 +192,6 @@ static int parse_edge(char *str, vid_t *begin, vid_t *end)
 
 	char *del;
 	if ((del = strchr(str, '-')) == NULL) {
-		debug_print("%s\n", "No delimiter found");
 		return -1;
 	}
 
@@ -191,7 +204,6 @@ static int parse_edge(char *str, vid_t *begin, vid_t *end)
 	*begin = strtol(begin_str, &endptr, 10);
 	free(begin_str);
 	if (strcmp(endptr, "\0") != 0) {
-		debug_print("%s\n", "could not parse begin to number");
 		return -1;
 	}
 
@@ -203,7 +215,6 @@ static int parse_edge(char *str, vid_t *begin, vid_t *end)
 	*end = strtol(end_str, &endptr, 10);
 	free(end_str);
 	if (strcmp(endptr, "\0") != 0) {
-		debug_print("%s\n", "could not parse end to number");
 		return -1;
 	}
 	return 0;
@@ -225,11 +236,8 @@ static void usage(void)
  */
 static void random_color(graph_t *graph)
 {
-
-	debug_print("%s\n", "called");
 	iterator_t *iter = tree_min(graph->vertices);
 	if (iter == NULL) {
-		debug_print("%s\n", "invalid iterator");
 		return;
 	}
 
@@ -238,7 +246,6 @@ static void random_color(graph_t *graph)
 		v = iter->value;
 		color_t c = (color_t)(rand() % 3);
 		if (tree_update_color(graph->vertices, v->id, c) < 0) {
-			debug_print("%s\n", "update color failed");
 			return;
 		}
 	} while (next(iter) != -1);
@@ -254,10 +261,8 @@ static void random_color(graph_t *graph)
  */
 static int find_edge(graph_t *graph, edge_t *edge)
 {
-	debug_print("%s\n", "called");
 	iterator_t *iter = tree_min(graph->vertices);
 	if (iter == NULL) {
-		debug_print("%s\n", "invalid iterator");
 		return -1;
 	}
 
@@ -268,14 +273,12 @@ static int find_edge(graph_t *graph, edge_t *edge)
 
 		edges = tree_min(vertex->edges);
 		if (edges == NULL) {
-			debug_print("%s\n", "invalid iterator");
 			free(iter);
 			return -1;
 		}
 
 		do {
 			if (edges->value == NULL) {
-				debug_print("%d: %s\n", vertex->id, "No edges");
 				continue;
 			}
 			if (color == edges->value->color) {

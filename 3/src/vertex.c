@@ -18,7 +18,7 @@ static int node_add(node_t **this_n, node_t *parent, vertex_t *vertex)
 	if (*this_n == NULL) {
 		node_t *node = (node_t *)malloc(sizeof(node_t));
 		if (node == NULL) {
-			debug_print("%s\n", "malloc failed");
+
 			return -1;
 		}
 		node->left = node->right = NULL;
@@ -216,13 +216,11 @@ size_t tree_size(const vertex_tree_t *tree)
 
 int tree_add(vertex_tree_t *tree, vertex_t *vertex)
 {
-	debug_print("%s\n", "called");
 	return node_add(&(tree->root), NULL, vertex);
 }
 
 vertex_t *tree_remove(vertex_tree_t *tree, const vid_t id)
 {
-	debug_print("%s\n", "called");
 	iterator_t *iter = tree_search(tree, id);
 	if (iter == NULL) {
 		return NULL;
@@ -233,7 +231,6 @@ vertex_t *tree_remove(vertex_tree_t *tree, const vid_t id)
 	}
 
 	tree->root = node_delete(tree->root, id);
-
 	return vertex;
 }
 
@@ -243,7 +240,7 @@ iterator_t *tree_search(const vertex_tree_t *tree, const vid_t id)
 
 	iterator_t *iter = (iterator_t *)malloc(sizeof(iterator_t));
 	if (iter == NULL) {
-		debug_print("%s\n", "malloc failed");
+
 		return NULL;
 	}
 	iter->node = n;
@@ -261,7 +258,6 @@ iterator_t *tree_max(const vertex_tree_t *tree)
 
 	iterator_t *iter = (iterator_t *)malloc(sizeof(iterator_t));
 	if (iter == NULL) {
-		debug_print("%s\n", "malloc failed");
 		return NULL;
 	}
 	iter->node = n;
@@ -279,7 +275,6 @@ iterator_t *tree_min(const vertex_tree_t *tree)
 
 	iterator_t *iter = (iterator_t *)malloc(sizeof(iterator_t));
 	if (iter == NULL) {
-		debug_print("%s\n", "malloc failed");
 		return NULL;
 	}
 	iter->node = n;
