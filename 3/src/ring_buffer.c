@@ -184,6 +184,8 @@ int block_write(ring_buffer_t* buffer, solution_t solution)
 
 	if (!buffer->memory->open) {
 		fprintf(stdout, "buffer closed\n");
+		sem_post(buffer->w_sem);
+		sem_post(buffer->free_sem);
 		return -1;
 	}
 
