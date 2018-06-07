@@ -62,7 +62,6 @@ int main(int argc, char *argv[])
 		graph = new_graph(edges, argc - 1);
 		random_color(graph);
 		solution_t solution = {.size = 0ul};
-		size_t i = 0;
 		while (!graph_colored(graph)) {
 			edge_t edge;
 			if (find_edge(graph, &edge) < 0) {
@@ -71,7 +70,7 @@ int main(int argc, char *argv[])
 			if (delete_edge(graph, edge) < 0) {
 				break;
 			}
-			solution.edges[i] = edge;
+			solution.edges[solution.size] = edge;
 			solution.size++;
 
 			if (solution.size > MAX_SOLUTION_SIZE) {
@@ -281,8 +280,7 @@ static int find_edge(graph_t *graph, edge_t *edge)
 			if (edges->value == NULL) {
 				continue;
 			}
-			if (color == edges->value->color
-				&& vertex->id != edges->value->id) {
+			if (color == edges->value->color) {
 				edge->begin = vertex->id;
 				edge->end = edges->value->id;
 				free(iter);
