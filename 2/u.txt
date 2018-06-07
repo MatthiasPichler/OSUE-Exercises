@@ -1,9 +1,0 @@
-hello
-world
-this
-is
-another
-test
-in the
-piping
-system
