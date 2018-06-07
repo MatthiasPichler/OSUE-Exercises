@@ -281,7 +281,8 @@ static int find_edge(graph_t *graph, edge_t *edge)
 			if (edges->value == NULL) {
 				continue;
 			}
-			if (color == edges->value->color) {
+			if (color == edges->value->color
+				&& vertex->id != edges->value->id) {
 				edge->begin = vertex->id;
 				edge->end = edges->value->id;
 				free(iter);

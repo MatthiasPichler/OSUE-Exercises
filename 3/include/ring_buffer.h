@@ -24,6 +24,8 @@
 #define USED_SEM "/1634256_used_sem"
 #define RW_SEM "/1634256_rw_sem"
 
+#define PERMISSION 0600
+
 typedef struct solution
 {
 	size_t size;

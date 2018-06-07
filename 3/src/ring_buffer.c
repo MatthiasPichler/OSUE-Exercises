@@ -14,7 +14,7 @@ ring_buffer_t* new_ring_buffer(void)
 	}
 
 	int fd;
-	if ((fd = shm_open(SHM_NAME, O_RDWR | O_CREAT, 0600)) < 0) {
+	if ((fd = shm_open(SHM_NAME, O_RDWR | O_CREAT, PERMISSION)) < 0) {
 		fprintf(stderr, "could not open shared memory.\n");
 		fprintf(stderr, "\t%s\n", strerror(errno));
 		free(buffer);
@@ -57,7 +57,7 @@ ring_buffer_t* new_ring_buffer(void)
 	mem->r_pos = 0;
 	buffer->memory = mem;
 
-	if ((buffer->free_sem = sem_open(FREE_SEM, O_CREAT, 0600, BUF_SIZE))
+	if ((buffer->free_sem = sem_open(FREE_SEM, O_CREAT, PERMISSION, BUF_SIZE))
 		== SEM_FAILED) {
 		fprintf(stderr, "could not open semaphore.\n");
 		fprintf(stderr, "\t%s\n", strerror(errno));
@@ -65,14 +65,15 @@ ring_buffer_t* new_ring_buffer(void)
 		return NULL;
 	}
 
-	if ((buffer->used_sem = sem_open(USED_SEM, O_CREAT, 0600, 0))
+	if ((buffer->used_sem = sem_open(USED_SEM, O_CREAT, PERMISSION, 0))
 		== SEM_FAILED) {
 		fprintf(stderr, "could not open semaphore.\n");
 		fprintf(stderr, "\t%s\n", strerror(errno));
 		clean_buffer(buffer);
 		return NULL;
 	}
-	if ((buffer->w_sem = sem_open(RW_SEM, O_CREAT, 0600, 1)) == SEM_FAILED) {
+	if ((buffer->w_sem = sem_open(RW_SEM, O_CREAT, PERMISSION, 1))
+		== SEM_FAILED) {
 		fprintf(stderr, "could not open semaphore.\n");
 		fprintf(stderr, "\t%s\n", strerror(errno));
 		clean_buffer(buffer);
@@ -146,6 +147,35 @@ int close_buffer(ring_buffer_t* buffer)
 	return 0;
 }
 
+static int try_sem_wait(ring_buffer_t* buffer, sem_t* sem)
+{
+	while (buffer->memory->open) {
+		if (sem_wait(sem) < 0) {
+			if (errno == EINTR) {
+				continue;
+			}
+			fprintf(stderr, "could not wait on semaphore\n");
+			fprintf(stderr, "\t%s\n", strerror(errno));
+			return -1;
+		}
+		return 0;
+	}
+	return -1;
+}
+
+static int try_sem_post(ring_buffer_t* buffer, sem_t* sem)
+{
+	while (sem_post(sem) < 0) {
+		if (errno == EINTR) {
+			continue;
+		}
+		fprintf(stderr, "could not post semaphore\n");
+		fprintf(stderr, "\t%s\n", strerror(errno));
+		return -1;
+	}
+	return 0;
+}
+
 static void append(ring_buffer_t* buffer, solution_t solution)
 {
 	buffer->memory->solutions[buffer->memory->w_pos] = solution;
@@ -164,48 +194,23 @@ static solution_t take(ring_buffer_t* buffer)
 
 int block_write(ring_buffer_t* buffer, solution_t solution)
 {
-	while (sem_wait(buffer->free_sem) < 0) {
-		if (errno == EINTR) {
-			continue;
-		}
-		fprintf(stderr, "could not wait on semaphore\n");
-		fprintf(stderr, "\t%s\n", strerror(errno));
-		return -1;
-	}
-	while (sem_wait(buffer->w_sem) < 0) {
-		if (errno == EINTR) {
-			continue;
-		}
-		fprintf(stderr, "could not wait on semaphore\n");
-		fprintf(stderr, "\t%s\n", strerror(errno));
-		sem_post(buffer->free_sem);
+
+	if (try_sem_wait(buffer, buffer->free_sem) < 0) {
 		return -1;
 	}
 
-	if (!buffer->memory->open) {
-		fprintf(stdout, "buffer closed\n");
-		sem_post(buffer->w_sem);
+	if (try_sem_wait(buffer, buffer->w_sem) < 0) {
 		sem_post(buffer->free_sem);
 		return -1;
 	}
 
 	append(buffer, solution);
 
-	while (sem_post(buffer->w_sem) < 0) {
-		if (errno == EINTR) {
-			continue;
-		}
-		fprintf(stderr, "could not post semaphore\n");
-		fprintf(stderr, "\t%s\n", strerror(errno));
+	if (try_sem_post(buffer, buffer->w_sem) < 0) {
 		sem_post(buffer->used_sem);
 		return -1;
 	}
-	while (sem_post(buffer->used_sem) < 0) {
-		if (errno == EINTR) {
-			continue;
-		}
-		fprintf(stderr, "could not post semaphore\n");
-		fprintf(stderr, "\t%s\n", strerror(errno));
+	if (try_sem_post(buffer, buffer->used_sem) < 0) {
 		return -1;
 	}
 
@@ -214,26 +219,15 @@ int block_write(ring_buffer_t* buffer, solution_t solution)
 
 int block_read(ring_buffer_t* buffer, solution_t* solution)
 {
-	while (sem_wait(buffer->used_sem) < 0) {
-		if (errno == EINTR) {
-			continue;
-		}
-		fprintf(stderr, "could not wait on semaphore\n");
-		fprintf(stderr, "\t%s\n", strerror(errno));
+	if (try_sem_wait(buffer, buffer->used_sem) < 0) {
 		return -1;
 	}
 
 	*solution = take(buffer);
 
-	while (sem_post(buffer->free_sem) < 0) {
-		if (errno == EINTR) {
-			continue;
-		}
-		fprintf(stderr, "could not post semaphore\n");
-		fprintf(stderr, "\t%s\n", strerror(errno));
+	if (try_sem_post(buffer, buffer->free_sem) < 0) {
 		return -1;
 	}
-
 
 	return 0;
 }
