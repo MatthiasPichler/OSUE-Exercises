@@ -17,7 +17,7 @@
 #include "vertex.h"
 
 #define SHM_NAME "/1634256_ring_buf_shm"
-#define BUF_SIZE 8
+#define BUF_SIZE 32
 #define MAX_SOLUTION_SIZE 8
 
 #define FREE_SEM "/1634256_free_sem"

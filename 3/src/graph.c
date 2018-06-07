@@ -9,6 +9,10 @@ graph_t* new_graph(const edge_t* edges, size_t size)
 	graph_t* graph = (graph_t*)malloc(sizeof(graph_t));
 	if (graph != NULL) {
 		graph->vertices = new_tree();
+		if (graph->vertices == NULL) {
+			free(graph);
+			return NULL;
+		}
 	}
 
 	for (int i = 0; i < size; i++) {
@@ -168,22 +172,4 @@ bool graph_colored(const graph_t* graph)
 	free(iter);
 	free(edge_iter);
 	return true;
-}
-
-void free_graph(graph_t* graph)
-{
-	iterator_t* iter = tree_min(graph->vertices);
-	if (iter == NULL) {
-		return;
-	}
-
-	vertex_t* v;
-	do {
-		v = iter->value;
-		free_tree(v->edges);
-	} while (next(iter) != -1);
-
-	free_tree(graph->vertices);
-
-	free(iter);
 }

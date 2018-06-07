@@ -146,7 +146,7 @@ static node_t *node_delete(node_t *this_n, const vid_t id)
 		// find smallest successor
 		node_t *tmp = node_min(this_n->right);
 
-		memcpy(this_n->value, tmp->value, sizeof(vertex_t));
+		memcpy(&(this_n->value), &(tmp->value), sizeof(vertex_t *));
 
 		this_n->right = node_delete(this_n->right, tmp->value->id);
 	}
@@ -185,18 +185,6 @@ static void node_print(const node_t *this_n)
 
 	fprintf(stdout, " (%d:%s) ", this_n->value->id, c);
 	node_print(this_n->right);
-}
-
-static void free_node(node_t *node)
-{
-	if (node == NULL) {
-		return;
-	}
-
-	free_node(node->left);
-	free_node(node->right);
-	free(node->value);
-	free(node);
 }
 
 vertex_t *new_vertex(const vid_t id)
@@ -242,6 +230,9 @@ vertex_t *tree_remove(vertex_tree_t *tree, const vid_t id)
 	}
 
 	tree->root = node_delete(tree->root, id);
+	if (tree->root != NULL) {
+		tree->root->parent = NULL;
+	}
 	return vertex;
 }
 
@@ -319,9 +310,4 @@ int next(iterator_t *iterator)
 	}
 	iterator->value = iterator->node->value;
 	return 0;
-}
-
-void free_tree(vertex_tree_t *tree)
-{
-	free_node(tree->root);
 }

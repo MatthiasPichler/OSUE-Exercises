@@ -58,7 +58,6 @@ int main(int argc, char *argv[])
 	}
 
 	while (true) {
-
 		graph = new_graph(edges, argc - 1);
 		random_color(graph);
 		solution_t solution = {.size = 0ul};
@@ -93,7 +92,6 @@ int main(int argc, char *argv[])
 		}
 	}
 
-
 	return EXIT_SUCCESS;
 }
 
@@ -103,7 +101,7 @@ int main(int argc, char *argv[])
 static void exit_handler(void)
 {
 	fprintf(stdout, "%s: Exit handler invoked\n", p_name);
-	free_graph(graph);
+	free(graph);
 	clean_buffer(buffer);
 	fclose(stdout);
 }
@@ -265,32 +263,32 @@ static int find_edge(graph_t *graph, edge_t *edge)
 		return -1;
 	}
 
-	iterator_t *edges;
+	iterator_t *neighbor;
 	do {
 		vertex_t *vertex = iter->value;
 		color_t color = vertex->color;
 
-		edges = tree_min(vertex->edges);
-		if (edges == NULL) {
+		neighbor = tree_min(vertex->edges);
+		if (neighbor == NULL) {
 			free(iter);
 			return -1;
 		}
 
 		do {
-			if (edges->value == NULL) {
+			if (neighbor->value == NULL) {
 				continue;
 			}
-			if (color == edges->value->color) {
+			if (color == neighbor->value->color) {
 				edge->begin = vertex->id;
-				edge->end = edges->value->id;
+				edge->end = neighbor->value->id;
 				free(iter);
-				free(edges);
+				free(neighbor);
 				return 0;
 			}
-		} while (next(edges) != -1);
+		} while (next(neighbor) != -1);
 	} while (next(iter) != -1);
 
 	free(iter);
-	free(edges);
+	free(neighbor);
 	return -1;
 }
