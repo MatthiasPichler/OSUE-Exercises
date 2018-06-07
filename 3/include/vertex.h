@@ -137,4 +137,10 @@ void tree_print(const vertex_tree_t *tree);
  */
 int next(iterator_t *iterator);
 
+/**
+ * @brief frees the resources of the tree
+ * @param tree the tree to be freed
+ */
+void free_tree(vertex_tree_t *tree);
+
 #endif  // VERTEX_H

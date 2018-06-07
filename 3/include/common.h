@@ -8,11 +8,12 @@
 #ifndef COMMON_H
 #define COMMON_H
 
-#define DEBUG false
 
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdio.h>
+
+#define DEBUG true
 
 #define debug_print(fmt, ...)       \
 	do {                            \

@@ -74,7 +74,6 @@ int main(int argc, char *argv[])
 			solution.size++;
 
 			if (solution.size > MAX_SOLUTION_SIZE) {
-				fprintf(stdout, "%s: Max solution size exceeded\n", p_name);
 				break;
 			}
 		}
@@ -82,7 +81,6 @@ int main(int argc, char *argv[])
 		if (solution.size > MAX_SOLUTION_SIZE) {
 			continue;
 		}
-
 
 		if (block_write(buffer, solution) < 0) {
 			fprintf(stderr, "%s:. writing failed.\n", p_name);
@@ -104,7 +102,8 @@ int main(int argc, char *argv[])
  */
 static void exit_handler(void)
 {
-	free(graph);
+	fprintf(stdout, "%s: Exit handler invoked\n", p_name);
+	free_graph(graph);
 	clean_buffer(buffer);
 	fclose(stdout);
 }
@@ -115,6 +114,7 @@ static void exit_handler(void)
  */
 static void sigint_handler(int signo)
 {
+	fprintf(stdout, "%s: Signal handler invoked\n", p_name);
 	exit(EXIT_FAILURE);
 }
 

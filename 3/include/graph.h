@@ -53,4 +53,10 @@ void graph_print(const graph_t* graph);
  */
 bool graph_colored(const graph_t* graph);
 
+/**
+ * @brief cleans all resources of the graph
+ * @param graph the graph to be freed
+ */
+void free_graph(graph_t* graph);
+
 #endif  // GRAPH_H

@@ -18,7 +18,6 @@ static int node_add(node_t **this_n, node_t *parent, vertex_t *vertex)
 	if (*this_n == NULL) {
 		node_t *node = (node_t *)malloc(sizeof(node_t));
 		if (node == NULL) {
-
 			return -1;
 		}
 		node->left = node->right = NULL;
@@ -188,6 +187,18 @@ static void node_print(const node_t *this_n)
 	node_print(this_n->right);
 }
 
+static void free_node(node_t *node)
+{
+	if (node == NULL) {
+		return;
+	}
+
+	free_node(node->left);
+	free_node(node->right);
+	free(node->value);
+	free(node);
+}
+
 vertex_t *new_vertex(const vid_t id)
 {
 	vertex_t *vertex = (vertex_t *)malloc(sizeof(vertex_t));
@@ -308,4 +319,9 @@ int next(iterator_t *iterator)
 	}
 	iterator->value = iterator->node->value;
 	return 0;
+}
+
+void free_tree(vertex_tree_t *tree)
+{
+	free_node(tree->root);
 }

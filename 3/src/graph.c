@@ -158,11 +158,6 @@ bool graph_colored(const graph_t* graph)
 				continue;
 			}
 			if (color == neighbor->color) {
-				debug_print(
-					"%s: (%d,%d)\n",
-					"Same color found",
-					vertex->id,
-					neighbor->id);
 				free(iter);
 				free(edge_iter);
 				return false;
@@ -173,4 +168,22 @@ bool graph_colored(const graph_t* graph)
 	free(iter);
 	free(edge_iter);
 	return true;
+}
+
+void free_graph(graph_t* graph)
+{
+	iterator_t* iter = tree_min(graph->vertices);
+	if (iter == NULL) {
+		return;
+	}
+
+	vertex_t* v;
+	do {
+		v = iter->value;
+		free_tree(v->edges);
+	} while (next(iter) != -1);
+
+	free_tree(graph->vertices);
+
+	free(iter);
 }

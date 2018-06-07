@@ -81,7 +81,6 @@ int main(int argc, char *argv[])
 		if (solution.size == 0) {
 			fprintf(stdout, "%s: Graph already 3colorable.\n", p_name);
 			exit(EXIT_SUCCESS);
-			// TODO terminate
 		}
 	}
 	return EXIT_SUCCESS;
@@ -93,6 +92,7 @@ int main(int argc, char *argv[])
  */
 static void exit_handler(void)
 {
+	fprintf(stdout, "%s: Exit handler invoked\n", p_name);
 	close_buffer(buffer);
 	clean_buffer(buffer);
 	fclose(stdout);
@@ -104,5 +104,6 @@ static void exit_handler(void)
  */
 static void sigint_handler(int signo)
 {
+	fprintf(stdout, "%s: Signal handler invoked\n", p_name);
 	exit(EXIT_FAILURE);
 }
