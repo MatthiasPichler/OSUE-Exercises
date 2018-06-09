@@ -100,7 +100,6 @@ int main(int argc, char *argv[])
  */
 static void exit_handler(void)
 {
-	fprintf(stdout, "%s: Exit handler invoked\n", p_name);
 	free(graph);
 	clean_buffer(buffer);
 	fclose(stdout);
@@ -112,7 +111,6 @@ static void exit_handler(void)
  */
 static void sigint_handler(int signo)
 {
-	fprintf(stdout, "%s: Signal handler invoked\n", p_name);
 	exit(EXIT_FAILURE);
 }
 
@@ -171,10 +169,12 @@ static int parse_edge(char *str, vid_t *begin, vid_t *end)
 	for (int i = 0; i < strlen(str); i++) {
 		if (str[i] == '-') {
 			if (del_f) {
-
 				return -1;
 			}
 			del_f = true;
+			if (i == 0 || i == strlen(str) - 1) {
+				return -1;
+			}
 			continue;
 		}
 		if (str[i] < '0' || str[i] > '9') {

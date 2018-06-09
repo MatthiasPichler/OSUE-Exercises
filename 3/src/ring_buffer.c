@@ -85,6 +85,10 @@ ring_buffer_t* new_ring_buffer(void)
 
 int clean_buffer(ring_buffer_t* buffer)
 {
+	if (buffer == NULL) {
+		return -1;
+	}
+
 	int res = 0;
 	if (buffer != NULL) {
 		if (munmap(buffer->memory, sizeof(ring_buffer_mem_t)) < 0) {
@@ -95,9 +99,11 @@ int clean_buffer(ring_buffer_t* buffer)
 	}
 
 	if (shm_unlink(SHM_NAME) < 0) {
-		fprintf(stderr, "could not unlink shared memory.\n");
-		fprintf(stderr, "\t%s\n", strerror(errno));
-		res = -1;
+		if (errno != ENOENT) {
+			fprintf(stderr, "could not unlink shared memory.\n");
+			fprintf(stderr, "\t%s\n", strerror(errno));
+			res = -1;
+		}
 	}
 
 	if (sem_close(buffer->free_sem) < 0) {
@@ -119,21 +125,27 @@ int clean_buffer(ring_buffer_t* buffer)
 	}
 
 	if (sem_unlink(FREE_SEM) < 0) {
-		fprintf(stderr, "could not close semaphore.\n");
-		fprintf(stderr, "\t%s\n", strerror(errno));
-		res = -1;
+		if (errno != ENOENT) {
+			fprintf(stderr, "could not unlink semaphore.\n");
+			fprintf(stderr, "\t%s\n", strerror(errno));
+			res = -1;
+		}
 	}
 
 	if (sem_unlink(USED_SEM) < 0) {
-		fprintf(stderr, "could not close semaphore.\n");
-		fprintf(stderr, "\t%s\n", strerror(errno));
-		res = -1;
+		if (errno != ENOENT) {
+			fprintf(stderr, "could not unlink semaphore.\n");
+			fprintf(stderr, "\t%s\n", strerror(errno));
+			res = -1;
+		}
 	}
 
 	if (sem_unlink(RW_SEM) < 0) {
-		fprintf(stderr, "could not close semaphore.\n");
-		fprintf(stderr, "\t%s\n", strerror(errno));
-		res = -1;
+		if (errno != ENOENT) {
+			fprintf(stderr, "could not unlink semaphore.\n");
+			fprintf(stderr, "\t%s\n", strerror(errno));
+			res = -1;
+		}
 	}
 
 	free(buffer);
@@ -161,7 +173,6 @@ static int try_sem_wait(ring_buffer_t* buffer, sem_t* sem)
 		return 0;
 	}
 	fprintf(stderr, "Buffer closed\n");
-	// TODO
 	exit(EXIT_SUCCESS);
 	return -1;
 }

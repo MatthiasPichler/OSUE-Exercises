@@ -8,6 +8,7 @@ SCRDIR=./src
 BINDIR=./bin
 
 $(OBJDIR)/%.o: $(SCRDIR)/%.c $(DEPS)
+	mkdir -p $(OBJDIR)
 	$(CC) $(CFLAGS) -c -o $@ $< 
 
 COMMON_OBJ = ring_buffer.o
