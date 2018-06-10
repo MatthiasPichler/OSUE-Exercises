@@ -57,6 +57,7 @@ int main(int argc, char *argv[])
 	}
 
 	while (true) {
+		free_graph(graph);
 		graph = new_graph(edges, argc - 1);
 		solution_t solution = {.size = 0ul};
 		while (!graph_colored(graph)) {
@@ -74,7 +75,7 @@ int main(int argc, char *argv[])
 				break;
 			}
 		}
-		free_graph(graph);
+
 
 		if (solution.size > MAX_SOLUTION_SIZE) {
 			continue;
