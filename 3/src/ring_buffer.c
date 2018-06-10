@@ -152,12 +152,6 @@ int clean_buffer(ring_buffer_t* buffer)
 	return res;
 }
 
-int close_buffer(ring_buffer_t* buffer)
-{
-	buffer->memory->open = false;
-	return 0;
-}
-
 static int try_sem_wait(ring_buffer_t* buffer, sem_t* sem)
 {
 	while (buffer->memory->open) {
@@ -185,6 +179,13 @@ static int try_sem_post(sem_t* sem)
 		fprintf(stderr, "\t%s\n", strerror(errno));
 		return -1;
 	}
+	return 0;
+}
+
+int close_buffer(ring_buffer_t* buffer)
+{
+	buffer->memory->open = false;
+	try_sem_post(buffer->free_sem);
 	return 0;
 }
 
