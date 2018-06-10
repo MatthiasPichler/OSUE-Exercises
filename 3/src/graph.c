@@ -43,7 +43,6 @@ graph_t* new_graph(edge_t* edges, size_t size)
 	graph->vertex_size = max_node(edges, size) + 1;
 	graph->vertices = (color_t*)calloc(graph->vertex_size, sizeof(color_t));
 	if (graph->vertices == NULL) {
-		// TODO manage cleanup
 		free(graph->edges);
 		free(graph);
 		return NULL;
@@ -93,7 +92,6 @@ void free_graph(graph_t* graph)
 	if (graph == NULL) {
 		return;
 	}
-	// TODO decide cleanup
 	free(graph->edges);
 	free(graph->vertices);
 	free(graph);
