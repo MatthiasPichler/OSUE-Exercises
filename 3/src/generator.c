@@ -76,6 +76,7 @@ int main(int argc, char *argv[])
 				break;
 			}
 		}
+		free_graph(graph);
 
 		if (solution.size > MAX_SOLUTION_SIZE) {
 			continue;
@@ -100,7 +101,7 @@ int main(int argc, char *argv[])
  */
 static void exit_handler(void)
 {
-	free(graph);
+	free_graph(graph);
 	clean_buffer(buffer);
 	fclose(stdout);
 }
@@ -233,21 +234,11 @@ static void usage(void)
  */
 static void random_color(graph_t *graph)
 {
-	iterator_t *iter = tree_min(graph->vertices);
-	if (iter == NULL) {
-		return;
-	}
 
-	vertex_t *v;
-	do {
-		v = iter->value;
+	for (vid_t i = 0; i < graph->vertex_size; i++) {
 		color_t c = (color_t)(rand() % 3);
-		if (tree_update_color(graph->vertices, v->id, c) < 0) {
-			return;
-		}
-	} while (next(iter) != -1);
-
-	free(iter);
+		graph->vertices[i] = c;
+	}
 }
 
 /**
@@ -258,37 +249,12 @@ static void random_color(graph_t *graph)
  */
 static int find_edge(graph_t *graph, edge_t *edge)
 {
-	iterator_t *iter = tree_min(graph->vertices);
-	if (iter == NULL) {
-		return -1;
-	}
-
-	iterator_t *neighbor;
-	do {
-		vertex_t *vertex = iter->value;
-		color_t color = vertex->color;
-
-		neighbor = tree_min(vertex->edges);
-		if (neighbor == NULL) {
-			free(iter);
-			return -1;
+	for (size_t i = 0; i < graph->edge_size; i++) {
+		edge_t e = graph->edges[i];
+		if (graph->vertices[e.begin] == graph->vertices[e.end]) {
+			memcpy(edge, &e, sizeof(edge_t));
+			return 0;
 		}
-
-		do {
-			if (neighbor->value == NULL) {
-				continue;
-			}
-			if (color == neighbor->value->color) {
-				edge->begin = vertex->id;
-				edge->end = neighbor->value->id;
-				free(iter);
-				free(neighbor);
-				return 0;
-			}
-		} while (next(neighbor) != -1);
-	} while (next(iter) != -1);
-
-	free(iter);
-	free(neighbor);
+	}
 	return -1;
 }

@@ -13,10 +13,10 @@ $(OBJDIR)/%.o: $(SCRDIR)/%.c $(DEPS)
 
 COMMON_OBJ = ring_buffer.o
 
-_DEPS = vertex.h ring_buffer.h graph.h common.h
+_DEPS = ring_buffer.h graph.h common.h
 DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
 
-_GENERATOR_OBJ = generator.o graph.o vertex.o $(COMMON_OBJ)
+_GENERATOR_OBJ = generator.o graph.o $(COMMON_OBJ)
 GENERATOR_OBJ = $(patsubst %,$(OBJDIR)/%,$(_GENERATOR_OBJ))
 
 _SUPERVISOR_OBJ = supervisor.o $(COMMON_OBJ)

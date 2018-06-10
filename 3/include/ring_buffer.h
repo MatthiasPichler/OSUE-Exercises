@@ -14,7 +14,7 @@
 #include <sys/types.h>
 
 #include "common.h"
-#include "vertex.h"
+#include "graph.h"
 
 #define SHM_NAME "/1634256_ring_buf_shm"
 #define BUF_SIZE 32

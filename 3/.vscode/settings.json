@@ -6,6 +6,12 @@
 		"ostream": "cpp",
 		"ratio": "cpp",
 		"system_error": "cpp",
-		"type_traits": "cpp"
+		"type_traits": "cpp",
+		"array": "cpp",
+		"initializer_list": "cpp",
+		"string_view": "cpp",
+		"utility": "cpp",
+		"unordered_map": "cpp",
+		"vector": "cpp"
 	}
 }

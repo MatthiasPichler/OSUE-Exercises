@@ -90,13 +90,12 @@ int clean_buffer(ring_buffer_t* buffer)
 	}
 
 	int res = 0;
-	if (buffer != NULL) {
-		if (munmap(buffer->memory, sizeof(ring_buffer_mem_t)) < 0) {
-			fprintf(stderr, "could not unmap shared memory.\n");
-			fprintf(stderr, "\t%s\n", strerror(errno));
-			res = -1;
-		}
+	if (munmap(buffer->memory, sizeof(ring_buffer_mem_t)) < 0) {
+		fprintf(stderr, "could not unmap shared memory.\n");
+		fprintf(stderr, "\t%s\n", strerror(errno));
+		res = -1;
 	}
+
 
 	if (shm_unlink(SHM_NAME) < 0) {
 		if (errno != ENOENT) {

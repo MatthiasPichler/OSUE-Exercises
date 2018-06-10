@@ -1,175 +1,138 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "../include/graph.h"
+#include "../include/common.h"
 
+static vid_t max_node(const edge_t* edges, size_t size)
+{
+	vid_t max = 0;
+	for (int i = 0; i < size; i++) {
+		if (edges[i].begin > max) {
+			max = edges[i].begin;
+		}
+		if (edges[i].end > max) {
+			max = edges[i].end;
+		}
+	}
+	return max;
+}
 
 graph_t* new_graph(const edge_t* edges, size_t size)
 {
 	graph_t* graph = (graph_t*)malloc(sizeof(graph_t));
-	if (graph != NULL) {
-		graph->vertices = new_tree();
-		if (graph->vertices == NULL) {
-			free(graph);
-			return NULL;
-		}
+	if (graph == NULL) {
+		return NULL;
 	}
 
-	for (int i = 0; i < size; i++) {
-		if (add_edge(graph, edges[i]) < 0) {
-			return NULL;
-		}
+	graph->edge_size = size;
+	graph->edges = (edge_t*)calloc(size, sizeof(edge_t));
+	if (graph->edges == NULL) {
+		free(graph);
+		return NULL;
+	}
+	memcpy(graph->edges, edges, sizeof(edge_t) * size);
+
+	graph->vertex_size = max_node(edges, size) + 1;
+	graph->vertices = (color_t*)calloc(graph->vertex_size, sizeof(color_t));
+	if (graph->vertices == NULL) {
+		// TODO manage cleanup
+		SAFE_DELETE(graph->edges)
+		// free(graph->edges);
+		SAFE_DELETE(graph)
+		// free(graph);
+		return NULL;
 	}
 
 	return graph;
 }
 
-void graph_print(const graph_t* graph)
+void free_graph(graph_t* graph)
 {
-	iterator_t* iter = tree_min(graph->vertices);
-	if (iter == NULL) {
+
+	if (graph == NULL) {
 		return;
 	}
-
-	fprintf(stdout, "[\n");
-
-	vertex_t* v;
-	char* c;
-	do {
-		v = iter->value;
-
-		switch (v->color) {
-			case red:
-				c = "r";
-				break;
-			case green:
-				c = "g";
-				break;
-			case blue:
-				c = "b";
-				break;
-			default:
-				c = "-";
-		}
-
-		fprintf(stdout, "\t(%d:%s)->", v->id, c);
-		tree_print(v->edges);
-	} while (next(iter) != -1);
-
-	fprintf(stdout, "]\n");
-
-	free(iter);
+	// TODO decide cleanup
+	SAFE_DELETE(graph->edges)
+	// free(graph->edges);
+	SAFE_DELETE(graph->vertices)
+	// free(graph->vertices);
+	SAFE_DELETE(graph)
+	// free(graph);
 }
 
-int add_edge(graph_t* graph, const edge_t edge)
+void graph_print(const graph_t* graph)
 {
-	iterator_t* iter;
-	if ((iter = tree_search(graph->vertices, edge.begin)) == NULL) {
-		return -1;
-	}
-	vertex_t* begin = iter->value;
-	if (begin == NULL) {
-		begin = new_vertex(edge.begin);
-		if (tree_add(graph->vertices, begin) < 0) {
-			free(iter);
-			free(begin);
-			return -1;
+	fprintf(stdout, "[\n");
+	for (int i = 0; i < graph->vertex_size; i++) {
+		char c;
+		switch (graph->vertices[i]) {
+			case red:
+				c = 'r';
+				break;
+			case green:
+				c = 'g';
+				break;
+			case blue:
+				c = 'b';
+				break;
+			default:
+				c = '-';
 		}
-	}
-
-	if ((iter = tree_search(graph->vertices, edge.end)) == NULL) {
-		return -1;
-	}
-	vertex_t* end = iter->value;
-	if (end == NULL) {
-		end = new_vertex(edge.end);
-		if (tree_add(graph->vertices, end) < 0) {
-			free(iter);
-			free(end);
-			return -1;
+		fprintf(stdout, "(%d:%c): [", i, c);
+		for (int j = 0; j < graph->edge_size; j++) {
+			if (graph->edges[j].begin == i) {
+				fprintf(stdout, " %d ", graph->edges[j].end);
+			}
+			if (graph->edges[j].end == i) {
+				fprintf(stdout, " %d ", graph->edges[j].begin);
+			}
 		}
+		fprintf(stdout, "]\n");
 	}
-	free(iter);
-
-
-	if (tree_add(begin->edges, end) < 0) {
-		return -1;
-	}
-
-	return tree_add(end->edges, begin);
+	fprintf(stdout, "]\n");
 }
 
 int delete_edge(graph_t* graph, const edge_t edge)
 {
-	iterator_t* iter;
-	vertex_t* begin;
-	vertex_t* end;
-	if ((iter = tree_search(graph->vertices, edge.begin)) == NULL) {
-		return -1;
-	}
-	begin = iter->value;
-	if (begin == NULL) {
-		free(iter);
-		return -1;
-	}
-	free(iter);
 
-	if ((iter = tree_search(graph->vertices, edge.end)) == NULL) {
-		return -1;
+	vid_t i;
+	bool found = false;
+	for (i = 0; i < graph->edge_size; i++) {
+		edge_t e = graph->edges[i];
+		if (e.begin == edge.begin && e.end == edge.end) {
+			found = true;
+			break;
+		}
 	}
-	end = iter->value;
-	if (end == NULL) {
-		free(iter);
-		return -1;
-	}
-	free(iter);
 
-	if (tree_remove(begin->edges, edge.end) == NULL) {
-		return -1;
-	}
-	if (tree_remove(end->edges, edge.begin) == NULL) {
+	if (!found) {
 		return -1;
 	}
 
+	edge_t tmp = graph->edges[i];
+	graph->edges[i] = graph->edges[graph->edge_size - 1];
+	graph->edges[graph->edge_size - 1] = tmp;
+
+	graph->edge_size--;
+	graph->edges =
+		(edge_t*)realloc(graph->edges, sizeof(edge_t) * graph->edge_size);
+	if (graph->edges == NULL) {
+		exit(EXIT_FAILURE);
+	}
 	return 0;
 }
 
 bool graph_colored(const graph_t* graph)
 {
-	iterator_t* iter = tree_min(graph->vertices);
-	if (iter == NULL) {
-		return false;
-	}
-
-	iterator_t* edge_iter;
-	do {
-		vertex_t* vertex = iter->value;
-		color_t color = vertex->color;
-
-		if (vertex == NULL) {
-			continue;
-		}
-
-		edge_iter = tree_min(vertex->edges);
-		if (edge_iter == NULL) {
-			free(iter);
+	for (size_t i = 0; i < graph->edge_size; i++) {
+		edge_t e = graph->edges[i];
+		if (graph->vertices[e.begin] == graph->vertices[e.end]) {
 			return false;
 		}
+	}
 
-		do {
-			vertex_t* neighbor = edge_iter->value;
-			if (neighbor == NULL) {
-				continue;
-			}
-			if (color == neighbor->color) {
-				free(iter);
-				free(edge_iter);
-				return false;
-			}
-		} while (next(edge_iter) != -1);
-	} while (next(iter) != -1);
-
-	free(iter);
-	free(edge_iter);
 	return true;
 }
