@@ -23,14 +23,13 @@ static edge_t *edges = NULL;
 static graph_t *graph = NULL;
 static ring_buffer_t *buffer;
 
-static void sigint_handler(int signo);
+static void sig_handler(int signo);
 static void exit_handler(void);
 
 static int parse_args(int argc, char *argv[]);
 static int parse_edge(char *str, vid_t *begin, vid_t *end);
 static void usage(void);
 
-static void random_color(graph_t *graph);
 static int find_edge(graph_t *graph, edge_t *edge);
 
 int main(int argc, char *argv[])
@@ -40,7 +39,7 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "Could not set exit function\n");
 		exit(EXIT_FAILURE);
 	}
-	if (signal(SIGINT, sigint_handler) == SIG_ERR) {
+	if (signal(SIGINT, sig_handler) == SIG_ERR) {
 		fprintf(stderr, "Could not set SIGINT signal handler\n");
 		exit(EXIT_FAILURE);
 	}
@@ -58,8 +57,8 @@ int main(int argc, char *argv[])
 	}
 
 	while (true) {
+		free_graph(graph);
 		graph = new_graph(edges, argc - 1);
-		random_color(graph);
 		solution_t solution = {.size = 0ul};
 		while (!graph_colored(graph)) {
 			edge_t edge;
@@ -77,12 +76,13 @@ int main(int argc, char *argv[])
 			}
 		}
 
+
 		if (solution.size > MAX_SOLUTION_SIZE) {
 			continue;
 		}
 
 		if (block_write(buffer, solution) < 0) {
-			fprintf(stderr, "%s:. writing failed.\n", p_name);
+			fprintf(stderr, "%s: writing failed.\n", p_name);
 			exit(EXIT_FAILURE);
 		}
 
@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
  */
 static void exit_handler(void)
 {
-	free(graph);
+	free_graph(graph);
 	clean_buffer(buffer);
 	fclose(stdout);
 }
@@ -109,7 +109,7 @@ static void exit_handler(void)
  * @brief the signal handler for SIGINT to kill all child processes
  * @param signo the identifier of the signal
  */
-static void sigint_handler(int signo)
+static void sig_handler(int signo)
 {
 	exit(EXIT_FAILURE);
 }
@@ -185,8 +185,6 @@ static int parse_edge(char *str, vid_t *begin, vid_t *end)
 		return -1;
 	}
 
-	char *endptr;
-
 	char *del;
 	if ((del = strchr(str, '-')) == NULL) {
 		return -1;
@@ -198,22 +196,17 @@ static int parse_edge(char *str, vid_t *begin, vid_t *end)
 		return -1;
 	}
 
-	*begin = strtol(begin_str, &endptr, 10);
+	*begin = strtol(begin_str, NULL, 10);
 	free(begin_str);
-	if (strcmp(endptr, "\0") != 0) {
-		return -1;
-	}
+
 
 	char *end_str;
 	if ((end_str = strdup(del + 1)) == NULL) {
 		return -1;
 	}
 
-	*end = strtol(end_str, &endptr, 10);
+	*end = strtol(end_str, NULL, 10);
 	free(end_str);
-	if (strcmp(endptr, "\0") != 0) {
-		return -1;
-	}
 	return 0;
 }
 
@@ -228,29 +221,6 @@ static void usage(void)
 }
 
 /**
- * @brief randomly color the given graph
- * @param graph the graph to be colored
- */
-static void random_color(graph_t *graph)
-{
-	iterator_t *iter = tree_min(graph->vertices);
-	if (iter == NULL) {
-		return;
-	}
-
-	vertex_t *v;
-	do {
-		v = iter->value;
-		color_t c = (color_t)(rand() % 3);
-		if (tree_update_color(graph->vertices, v->id, c) < 0) {
-			return;
-		}
-	} while (next(iter) != -1);
-
-	free(iter);
-}
-
-/**
  * @brief finds an edge that violates the 3coloring of the graph
  * @param graph the graph to search
  * @param edge the edge to hold the found values
@@ -258,37 +228,12 @@ static void random_color(graph_t *graph)
  */
 static int find_edge(graph_t *graph, edge_t *edge)
 {
-	iterator_t *iter = tree_min(graph->vertices);
-	if (iter == NULL) {
-		return -1;
-	}
-
-	iterator_t *neighbor;
-	do {
-		vertex_t *vertex = iter->value;
-		color_t color = vertex->color;
-
-		neighbor = tree_min(vertex->edges);
-		if (neighbor == NULL) {
-			free(iter);
-			return -1;
+	for (size_t i = 0; i < graph->edge_size; i++) {
+		edge_t e = graph->edges[i];
+		if (graph->vertices[e.begin] == graph->vertices[e.end]) {
+			memcpy(edge, &e, sizeof(edge_t));
+			return 0;
 		}
-
-		do {
-			if (neighbor->value == NULL) {
-				continue;
-			}
-			if (color == neighbor->value->color) {
-				edge->begin = vertex->id;
-				edge->end = neighbor->value->id;
-				free(iter);
-				free(neighbor);
-				return 0;
-			}
-		} while (next(neighbor) != -1);
-	} while (next(iter) != -1);
-
-	free(iter);
-	free(neighbor);
+	}
 	return -1;
 }

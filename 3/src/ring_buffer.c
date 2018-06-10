@@ -90,13 +90,12 @@ int clean_buffer(ring_buffer_t* buffer)
 	}
 
 	int res = 0;
-	if (buffer != NULL) {
-		if (munmap(buffer->memory, sizeof(ring_buffer_mem_t)) < 0) {
-			fprintf(stderr, "could not unmap shared memory.\n");
-			fprintf(stderr, "\t%s\n", strerror(errno));
-			res = -1;
-		}
+	if (munmap(buffer->memory, sizeof(ring_buffer_mem_t)) < 0) {
+		fprintf(stderr, "could not unmap shared memory.\n");
+		fprintf(stderr, "\t%s\n", strerror(errno));
+		res = -1;
 	}
+
 
 	if (shm_unlink(SHM_NAME) < 0) {
 		if (errno != ENOENT) {
@@ -153,9 +152,16 @@ int clean_buffer(ring_buffer_t* buffer)
 	return res;
 }
 
-int close_buffer(ring_buffer_t* buffer)
+static int try_sem_post(sem_t* sem)
 {
-	buffer->memory->open = false;
+	while (sem_post(sem) < 0) {
+		if (errno == EINTR) {
+			continue;
+		}
+		fprintf(stderr, "could not post semaphore\n");
+		fprintf(stderr, "\t%s\n", strerror(errno));
+		return -1;
+	}
 	return 0;
 }
 
@@ -172,21 +178,15 @@ static int try_sem_wait(ring_buffer_t* buffer, sem_t* sem)
 		}
 		return 0;
 	}
-	fprintf(stderr, "Buffer closed\n");
+	try_sem_post(buffer->free_sem);
+	try_sem_post(buffer->w_sem);
 	exit(EXIT_SUCCESS);
 	return -1;
 }
 
-static int try_sem_post(ring_buffer_t* buffer, sem_t* sem)
+int close_buffer(ring_buffer_t* buffer)
 {
-	while (sem_post(sem) < 0) {
-		if (errno == EINTR) {
-			continue;
-		}
-		fprintf(stderr, "could not post semaphore\n");
-		fprintf(stderr, "\t%s\n", strerror(errno));
-		return -1;
-	}
+	buffer->memory->open = false;
 	return 0;
 }
 
@@ -214,17 +214,17 @@ int block_write(ring_buffer_t* buffer, solution_t solution)
 	}
 
 	if (try_sem_wait(buffer, buffer->w_sem) < 0) {
-		sem_post(buffer->free_sem);
+		try_sem_post(buffer->free_sem);
 		return -1;
 	}
 
 	append(buffer, solution);
 
-	if (try_sem_post(buffer, buffer->w_sem) < 0) {
-		sem_post(buffer->used_sem);
+	if (try_sem_post(buffer->w_sem) < 0) {
+		try_sem_post(buffer->used_sem);
 		return -1;
 	}
-	if (try_sem_post(buffer, buffer->used_sem) < 0) {
+	if (try_sem_post(buffer->used_sem) < 0) {
 		return -1;
 	}
 
@@ -239,7 +239,7 @@ int block_read(ring_buffer_t* buffer, solution_t* solution)
 
 	*solution = take(buffer);
 
-	if (try_sem_post(buffer, buffer->free_sem) < 0) {
+	if (try_sem_post(buffer->free_sem) < 0) {
 		return -1;
 	}
 
