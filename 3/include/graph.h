@@ -15,7 +15,6 @@
 
 typedef enum
 {
-	undef = -1,
 	red = 0,
 	green = 1,
 	blue = 2
@@ -47,12 +46,13 @@ typedef struct graph
 int delete_edge(graph_t* graph, const edge_t edge);
 
 /**
- * @brief create and initialize a new graph from the given edges
+ * @brief create and initialize a new graph from the given edges, with
+ * randomized colors
  * @param edges the array of edges
  * @param size the size of the arrray
  * @return the generated graph or NULL on failure
  */
-graph_t* new_graph(const edge_t* edges, size_t size);
+graph_t* new_graph(edge_t* edges, size_t size);
 
 /**
  * @brief frees all resources used by the graph

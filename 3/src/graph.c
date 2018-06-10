@@ -19,12 +19,15 @@ static vid_t max_node(const edge_t* edges, size_t size)
 	return max;
 }
 
-graph_t* new_graph(const edge_t* edges, size_t size)
+
+graph_t* new_graph(edge_t* edges, size_t size)
 {
 	graph_t* graph = (graph_t*)malloc(sizeof(graph_t));
 	if (graph == NULL) {
 		return NULL;
 	}
+	graph->edges = NULL;
+	graph->vertices = NULL;
 
 	graph->edge_size = size;
 	graph->edges = (edge_t*)calloc(size, sizeof(edge_t));
@@ -32,35 +35,26 @@ graph_t* new_graph(const edge_t* edges, size_t size)
 		free(graph);
 		return NULL;
 	}
-	memcpy(graph->edges, edges, sizeof(edge_t) * size);
+	for (int i = 0; i < size; i++) {
+		graph->edges[i] = edges[i];
+	}
+
 
 	graph->vertex_size = max_node(edges, size) + 1;
 	graph->vertices = (color_t*)calloc(graph->vertex_size, sizeof(color_t));
 	if (graph->vertices == NULL) {
 		// TODO manage cleanup
-		SAFE_DELETE(graph->edges)
-		// free(graph->edges);
-		SAFE_DELETE(graph)
-		// free(graph);
+		free(graph->edges);
+		free(graph);
 		return NULL;
 	}
 
-	return graph;
-}
-
-void free_graph(graph_t* graph)
-{
-
-	if (graph == NULL) {
-		return;
+	for (vid_t i = 0; i < graph->vertex_size; i++) {
+		color_t c = (color_t)(rand() % 3);
+		graph->vertices[i] = c;
 	}
-	// TODO decide cleanup
-	SAFE_DELETE(graph->edges)
-	// free(graph->edges);
-	SAFE_DELETE(graph->vertices)
-	// free(graph->vertices);
-	SAFE_DELETE(graph)
-	// free(graph);
+
+	return graph;
 }
 
 void graph_print(const graph_t* graph)
@@ -78,8 +72,6 @@ void graph_print(const graph_t* graph)
 			case blue:
 				c = 'b';
 				break;
-			default:
-				c = '-';
 		}
 		fprintf(stdout, "(%d:%c): [", i, c);
 		for (int j = 0; j < graph->edge_size; j++) {
@@ -93,6 +85,18 @@ void graph_print(const graph_t* graph)
 		fprintf(stdout, "]\n");
 	}
 	fprintf(stdout, "]\n");
+}
+
+void free_graph(graph_t* graph)
+{
+
+	if (graph == NULL) {
+		return;
+	}
+	// TODO decide cleanup
+	free(graph->edges);
+	free(graph->vertices);
+	free(graph);
 }
 
 int delete_edge(graph_t* graph, const edge_t edge)
@@ -120,7 +124,7 @@ int delete_edge(graph_t* graph, const edge_t edge)
 	graph->edges =
 		(edge_t*)realloc(graph->edges, sizeof(edge_t) * graph->edge_size);
 	if (graph->edges == NULL) {
-		exit(EXIT_FAILURE);
+		return -1;
 	}
 	return 0;
 }

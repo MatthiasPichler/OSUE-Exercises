@@ -30,7 +30,6 @@ static int parse_args(int argc, char *argv[]);
 static int parse_edge(char *str, vid_t *begin, vid_t *end);
 static void usage(void);
 
-static void random_color(graph_t *graph);
 static int find_edge(graph_t *graph, edge_t *edge);
 
 int main(int argc, char *argv[])
@@ -59,7 +58,6 @@ int main(int argc, char *argv[])
 
 	while (true) {
 		graph = new_graph(edges, argc - 1);
-		random_color(graph);
 		solution_t solution = {.size = 0ul};
 		while (!graph_colored(graph)) {
 			edge_t edge;
@@ -186,8 +184,6 @@ static int parse_edge(char *str, vid_t *begin, vid_t *end)
 		return -1;
 	}
 
-	char *endptr;
-
 	char *del;
 	if ((del = strchr(str, '-')) == NULL) {
 		return -1;
@@ -199,22 +195,17 @@ static int parse_edge(char *str, vid_t *begin, vid_t *end)
 		return -1;
 	}
 
-	*begin = strtol(begin_str, &endptr, 10);
+	*begin = strtol(begin_str, NULL, 10);
 	free(begin_str);
-	if (strcmp(endptr, "\0") != 0) {
-		return -1;
-	}
+
 
 	char *end_str;
 	if ((end_str = strdup(del + 1)) == NULL) {
 		return -1;
 	}
 
-	*end = strtol(end_str, &endptr, 10);
+	*end = strtol(end_str, NULL, 10);
 	free(end_str);
-	if (strcmp(endptr, "\0") != 0) {
-		return -1;
-	}
 	return 0;
 }
 
@@ -226,19 +217,6 @@ static void usage(void)
 	fprintf(stderr, "Usage:\n");
 	fprintf(stderr, "generator EDGES...\n");
 	fprintf(stderr, "where each edge is of format 1-2\n");
-}
-
-/**
- * @brief randomly color the given graph
- * @param graph the graph to be colored
- */
-static void random_color(graph_t *graph)
-{
-
-	for (vid_t i = 0; i < graph->vertex_size; i++) {
-		color_t c = (color_t)(rand() % 3);
-		graph->vertices[i] = c;
-	}
 }
 
 /**

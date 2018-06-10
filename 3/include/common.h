@@ -28,8 +28,4 @@
 		}                           \
 	} while (0)
 
-#define SAFE_DELETE(ptr) \
-	free(ptr);           \
-	ptr = NULL;
-
 #endif  // COMMON_H
