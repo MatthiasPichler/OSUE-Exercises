@@ -82,7 +82,7 @@ int main(int argc, char *argv[])
 		}
 
 		if (block_write(buffer, solution) < 0) {
-			fprintf(stderr, "%s:. writing failed.\n", p_name);
+			fprintf(stderr, "%s: writing failed.\n", p_name);
 			exit(EXIT_FAILURE);
 		}
 

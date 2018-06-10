@@ -12,6 +12,7 @@
 		"string_view": "cpp",
 		"utility": "cpp",
 		"unordered_map": "cpp",
-		"vector": "cpp"
+		"vector": "cpp",
+		"*.tcc": "cpp"
 	}
 }

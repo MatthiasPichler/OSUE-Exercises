@@ -152,23 +152,6 @@ int clean_buffer(ring_buffer_t* buffer)
 	return res;
 }
 
-static int try_sem_wait(ring_buffer_t* buffer, sem_t* sem)
-{
-	while (buffer->memory->open) {
-		if (sem_wait(sem) < 0) {
-			if (errno == EINTR) {
-				continue;
-			}
-			fprintf(stderr, "could not wait on semaphore\n");
-			fprintf(stderr, "\t%s\n", strerror(errno));
-			return -1;
-		}
-		return 0;
-	}
-	exit(EXIT_SUCCESS);
-	return -1;
-}
-
 static int try_sem_post(sem_t* sem)
 {
 	while (sem_post(sem) < 0) {
@@ -182,10 +165,27 @@ static int try_sem_post(sem_t* sem)
 	return 0;
 }
 
+static int try_sem_wait(ring_buffer_t* buffer, sem_t* sem)
+{
+	while (buffer->memory->open) {
+		if (sem_wait(sem) < 0) {
+			if (errno == EINTR) {
+				continue;
+			}
+			fprintf(stderr, "could not wait on semaphore\n");
+			fprintf(stderr, "\t%s\n", strerror(errno));
+			return -1;
+		}
+		return 0;
+	}
+	try_sem_post(buffer->free_sem);
+	exit(EXIT_SUCCESS);
+	return -1;
+}
+
 int close_buffer(ring_buffer_t* buffer)
 {
 	buffer->memory->open = false;
-	try_sem_post(buffer->free_sem);
 	return 0;
 }
 
