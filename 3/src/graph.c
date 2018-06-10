@@ -121,11 +121,14 @@ int delete_edge(graph_t* graph, const edge_t edge)
 	graph->edges[graph->edge_size - 1] = tmp;
 
 	graph->edge_size--;
-	graph->edges =
+	edge_t* e_ptr =
 		(edge_t*)realloc(graph->edges, sizeof(edge_t) * graph->edge_size);
-	if (graph->edges == NULL) {
+	if (e_ptr == NULL) {
 		return -1;
 	}
+
+	graph->edges = e_ptr;
+
 	return 0;
 }
 
