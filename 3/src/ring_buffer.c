@@ -179,6 +179,7 @@ static int try_sem_wait(ring_buffer_t* buffer, sem_t* sem)
 		return 0;
 	}
 	try_sem_post(buffer->free_sem);
+	try_sem_post(buffer->w_sem);
 	exit(EXIT_SUCCESS);
 	return -1;
 }
