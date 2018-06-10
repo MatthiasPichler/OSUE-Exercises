@@ -171,7 +171,6 @@ static int try_sem_wait(ring_buffer_t* buffer, sem_t* sem)
 		}
 		return 0;
 	}
-	fprintf(stderr, "Buffer closed\n");
 	exit(EXIT_SUCCESS);
 	return -1;
 }
