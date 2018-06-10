@@ -18,7 +18,7 @@ static char *p_name;
 static ring_buffer_t *buffer;
 static solution_t record = {.size = SIZE_MAX};
 
-static void sigint_handler(int signo);
+static void sig_handler(int signo);
 static void exit_handler(void);
 
 int main(int argc, char *argv[])
@@ -28,12 +28,12 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "Could not set exit function\n");
 		exit(EXIT_FAILURE);
 	}
-	if (signal(SIGINT, sigint_handler) == SIG_ERR) {
+	if (signal(SIGINT, sig_handler) == SIG_ERR) {
 		fprintf(stderr, "Could not set SIGINT signal handler\n");
 		exit(EXIT_FAILURE);
 	}
-	if (signal(SIGTERM, sigint_handler) == SIG_ERR) {
-		fprintf(stderr, "Could not set SIGINT signal handler\n");
+	if (signal(SIGTERM, sig_handler) == SIG_ERR) {
+		fprintf(stderr, "Could not set SIGTERM signal handler\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -101,7 +101,7 @@ static void exit_handler(void)
  * @brief the signal handler for SIGINT to kill all child processes
  * @param signo the identifier of the signal
  */
-static void sigint_handler(int signo)
+static void sig_handler(int signo)
 {
 	exit(EXIT_FAILURE);
 }
