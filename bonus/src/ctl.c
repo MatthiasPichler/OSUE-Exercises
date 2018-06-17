@@ -12,13 +12,22 @@ static dev_t ctl_devno;
 static struct cdev ctl_cdev;
 static struct file_operations ctl_fops;
 
-static bool cdev_init = false;
+static bool flag_init = false;
+
+static long ctl_ioctl(struct file* filp, unsigned int cmd, unsigned long arg)
+{
+	return 0;
+}
+
+static struct file_operations ctl_fops = {
+	.owner = THIS_MODULE,
+	.unlocked_ioctl = ctl_ioctl,
+};
 
 int ctl_setup(void)
 {
 	debug_print("%s\n", "Called ctl setup");
 	ctl_devno = MKDEV(MAJ_DEV_NUM, MIN_CTL_DEV_NUM);
-	ctl_fops = get_ctl_fops();
 	int err;
 	if ((err = register_chrdev_region(ctl_devno, 1, CTL_DEV_NAME)) < 0) {
 		debug_print("%s:%d\n", "Failed to register devices", err);
@@ -32,14 +41,14 @@ int ctl_setup(void)
 		debug_print("%s:%d\n", "Failed to add devices", err);
 		return err;
 	}
-	cdev_init = true;
+	flag_init = true;
 	return 0;
 }
 
 void ctl_cleanup(void)
 {
 	debug_print("%s\n", "Called ctl cleanup");
-	if (cdev_init) {
+	if (flag_init) {
 		cdev_del(&ctl_cdev);
 	}
 	unregister_chrdev_region(ctl_devno, 1);

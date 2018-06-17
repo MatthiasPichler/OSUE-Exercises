@@ -4,7 +4,7 @@
 #include <linux/types.h>
 #include <linux/semaphore.h>
 #include <linux/cdev.h>
-#include <linux/iotctl.h>
+#include <linux/ioctl.h>
 #include <linux/fs.h>
 
 #define MAJ_DEV_NUM 231
@@ -90,18 +90,5 @@ int vault_erase(vid_t id);
 #define CMD_CREATE _IOR(MAJ_DEV_NUM, 0, vault_params_t)
 #define CMD_DELETE _IOR(MAJ_DEV_NUM, 1, vid_t)
 #define CMD_ERASE _IOR(MAJ_DEV_NUM, 2, vid_t)
-
-/**
- * @brief create a new file operations structure for a secvault
- * @return a fops struct containing all file operations for the secvault
- */
-struct file_operations get_vault_fops(void);
-
-/**
- * @brief create a new file operations structure for the control device
- * @return a fops struct containing all file operations for the secvault
- * controller
- */
-struct file_operations get_ctl_fops(void);
 
 #endif /* SECVAULT_H */

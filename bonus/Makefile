@@ -1,5 +1,5 @@
 obj-m += secvault.o
-secvault-objs := src/main.o
+secvault-objs := src/main.o src/ctl.o src/vault.o
 
 EXTRA_CFLAGS += -I$(src)/include
 EXTRA_CFLAGS += -std=gnu99
@@ -9,5 +9,3 @@ all:
 
 clean:
 	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) clean
-
-$(src)/src/main.o: $(src)/src/main.c $(src)/include/debug.h

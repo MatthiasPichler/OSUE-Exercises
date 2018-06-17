@@ -6,6 +6,7 @@
 		"irugo",
 		"llseek",
 		"loff",
+		"printk",
 		"s",
 		"tuwien"
 	]

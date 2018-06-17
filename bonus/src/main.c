@@ -5,6 +5,7 @@
 #include <linux/fs.h>
 #include <linux/kernel.h>
 #include <linux/types.h>
+#include <linux/stddef.h>
 
 #include "../include/debug.h"
 #include "../include/secvault.h"
@@ -14,8 +15,8 @@ MODULE_AUTHOR("Matthias Pichler <e1634256@student.tuwien.ac.at>");
 MODULE_DESCRIPTION("Secure Vault");
 MODULE_VERSION("1.1");
 
-static dev_t device;
 
+bool debug = false;
 module_param(debug, bool, S_IRUGO);
 MODULE_PARM_DESC(debug, "Enable debugging");
 

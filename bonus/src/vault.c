@@ -4,19 +4,14 @@
 #include <linux/slab.h>
 #include <linux/fs.h>
 #include <linux/errno.h>
-#include <linux/kdev_t.h>
-#include <linux/device.h>
 #include <linux/uaccess.h>
-#include <linux/thread_info.h>
-#include <linux/sched.h>
-#include <asm/uaccess.h>
+#include <linux/cred.h>
 
 #include "../include/secvault.h"
 #include "../include/debug.h"
 
 static dev_t first_vault;
 static vault_dev_t vaults[MAX_NUM_VAULTS];
-static struct file_operations sv_fops;
 
 /**
  * @brief check if the calling process has permission to access the given vault
@@ -25,14 +20,56 @@ static struct file_operations sv_fops;
  */
 static bool has_permission(const vault_dev_t* dev)
 {
-	return dev->creator == current_uid();
+	return (dev->creator == current_uid().val);
 }
+
+static loff_t sv_llseek(struct file* filp, loff_t off, int whence)
+{
+	return 0;
+}
+
+static ssize_t
+sv_read(struct file* filp, char __user* buf, size_t count, loff_t* f_pos)
+{
+	return 0;
+}
+
+static ssize_t
+sv_write(struct file* filp, const char __user* buf, size_t count, loff_t* f_pos)
+{
+	return 0;
+}
+
+static long sv_ioctl(struct file* filp, unsigned int cmd, unsigned long arg)
+{
+	return 0;
+}
+
+static int sv_open(struct inode* inode, struct file* filp)
+{
+	return 0;
+}
+
+static int sv_release(struct inode* inode, struct file* filp)
+{
+	return 0;
+}
+
+static struct file_operations sv_fops = {
+	.owner = THIS_MODULE,
+	.llseek = sv_llseek,
+	.read = sv_read,
+	.write = sv_write,
+	.unlocked_ioctl = sv_ioctl,
+	.open = sv_open,
+	.release = sv_release,
+};
+
 
 int vault_setup(void)
 {
 	debug_print("%s\n", "Called vault setup");
 	first_vault = MKDEV(MAJ_DEV_NUM, MIN_VAULT_DEV_NUM);
-	sv_fops = get_vault_fops();
 	int err;
 	if ((err = register_chrdev_region(
 			 first_vault, MAX_NUM_VAULTS, VAULT_DEV_NAME))
@@ -43,7 +80,7 @@ int vault_setup(void)
 
 	for (int i = 0; i < MAX_NUM_VAULTS; i++) {
 		vaults[i].data = NULL;
-		init_MUTEX(&(vaults[i].sem));
+		sema_init(&(vaults[i].sem), 1);
 	}
 
 	return 0;
@@ -99,7 +136,7 @@ int vault_create(const vault_params_t* params)
 
 	vault->size = 0;
 	vault->params = *params;
-	vault->creator = current_uid();
+	vault->creator = current_uid().val;
 
 
 	int i;
@@ -148,14 +185,14 @@ int vault_delete(vid_t id)
 		return -ENODEV;
 	}
 
-	if (!has_permission()) {
+	if (!has_permission(vault)) {
 		debug_print("%s\n", "Permission denied");
 		up(&vault->sem);
 		return -EACCES;
 	}
 
 
-	cdev_del(&vault->cdev));
+	cdev_del(&vault->cdev);
 	kfree(vault->data);
 	vault->data = NULL;
 	vault->size = 0;
@@ -190,13 +227,13 @@ int vault_erase(vid_t id)
 		return -ENODEV;
 	}
 
-	if (!has_permission()) {
+	if (!has_permission(vault)) {
 		debug_print("%s\n", "Permission denied");
 		up(&vault->sem);
 		return -EACCES;
 	}
 
-	if (memset(vault->data, 0, vault->max_size) == NULL) {
+	if (memset(vault->data, 0, vault->params.max_size) == NULL) {
 		up(&vault->sem);
 		return -EIO;
 	}

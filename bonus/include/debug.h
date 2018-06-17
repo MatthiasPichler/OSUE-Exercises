@@ -4,7 +4,7 @@
 #include <linux/types.h>
 #include <linux/kernel.h>
 
-bool debug = false;
+extern bool debug;
 
 /**
  * @brief print debug messages to KERN_DEBUG,when debug module paramters was set
