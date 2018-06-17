@@ -45,7 +45,7 @@ typedef struct vault_dev
 
 /**
  * @brief setup the control device of the secvaults
- * @return 0 on success, -1 otherwise
+ * @return 0 on success, a negative error code on failure
  */
 int ctl_setup(void);
 
@@ -56,7 +56,7 @@ void ctl_cleanup(void);
 
 /**
  * @brief setup all resources needed for vault creation
- * @return 0 on success, -1 on failure
+ * @return 0 on success, a negative error code on failure
  */
 int vault_setup(void);
 
@@ -68,21 +68,21 @@ void vault_cleanup(void);
 /**
  * @brief create a new vault with the given paramters
  * @param params the creation paramters for this vault
- * @return 0 on success, -1 on failure
+ * @return 0 on success, a negative error code on failure
  */
 int vault_create(const vault_params_t* params);
 
 /**
  * @brief delete the vault with the given id
  * @param id the id of the vault to delete
- * @return 0 on success, -1 on failure
+ * @return 0 on success, a negative error code on failure
  */
 int vault_delete(vid_t id);
 
 /**
  * @brief erase all data of the vault with the given id
  * @param id the id of the vault to erase
- * @return 0 on success, -1 on failure
+ * @return 0 on success, a negative error code on failure
  */
 int vault_erase(vid_t id);
 
