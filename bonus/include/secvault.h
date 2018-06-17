@@ -97,4 +97,11 @@ int vault_erase(vid_t id);
  */
 struct file_operations get_vault_fops(void);
 
+/**
+ * @brief create a new file operations structure for the control device
+ * @return a fops struct containing all file operations for the secvault
+ * controller
+ */
+struct file_operations get_ctl_fops(void);
+
 #endif /* SECVAULT_H */

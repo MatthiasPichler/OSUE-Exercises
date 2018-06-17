@@ -19,11 +19,7 @@ sv_write(struct file* filp, const char __user* buf, size_t count, loff_t* f_pos)
 	return 0;
 }
 
-static int sv_ioctl(
-	struct inode* inode,
-	struct file* filp,
-	unsigned int cmd,
-	unsigned long arg)
+static long sv_ioctl(struct file* filp, unsigned int cmd, unsigned long arg)
 {
 	return 0;
 }
@@ -51,4 +47,20 @@ struct file_operations get_vault_fops(void)
 	};
 
 	return sv_fops;
+}
+
+static long ctl_ioctl(struct file* filp, unsigned int cmd, unsigned long arg)
+{
+	return 0;
+}
+
+struct file_operations get_ctl_fops(void)
+{
+
+	struct file_operations ctl_fops = {
+		.owner = THIS_MODULE,
+		.unlocked_ioctl = ctl_ioctl,
+	};
+
+	return ctl_fops;
 }
