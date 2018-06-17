@@ -10,14 +10,33 @@
 
 static dev_t ctl_devno;
 static struct cdev ctl_cdev;
-static struct file_operations ctl_fops;
 
 static bool flag_init = false;
 
 static long ctl_ioctl(struct file* filp, unsigned int cmd, unsigned long arg)
 {
-	// TODO
-	return 0;
+	vault_params_t params;
+
+	switch (cmd) {
+		case CMD_CREATE:
+			if (copy_from_user(
+					&params, (vault_params_t*)arg, sizeof(vault_params_t))) {
+				debug_print("%s: %d\n", "Copy from user failed");
+				return -EFAULT;
+			}
+			return vault_create(&params);
+			break;
+		case CMD_DELETE:
+			return vault_delete((vid_t)arg);
+			break;
+		case CMD_ERASE:
+			return vault_erase((vid_t)arg);
+			break;
+		default:
+			printk(KERNEL_WARNING "Invalid ioctl command %d", cmd);
+			return -EINVAL;
+	}
+	return -EINVAL;
 }
 
 static struct file_operations ctl_fops = {
