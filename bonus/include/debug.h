@@ -6,6 +6,12 @@
 
 bool debug = false;
 
+/**
+ * @brief print debug messages to KERN_DEBUG,when debug module paramters was set
+ * to true
+ * @param fmt the format string to print
+ * @param varargs the values for the format string
+ */
 #define debug_print(fmt, ...)                  \
 	do {                                       \
 		if (debug) {                           \

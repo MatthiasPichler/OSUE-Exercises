@@ -19,33 +19,32 @@ static dev_t device;
 module_param(debug, bool, S_IRUGO);
 MODULE_PARM_DESC(debug, "Enable debugging");
 
-static void __exit sv_exit(void);
-static int __init sv_init(void);
-
-
 static int __init sv_init(void)
 {
-	debug_print("%s\n", "Init function called");
-	debug_print("%s\n", "Registering devices...");
+	debug_print("%s\n", "Init function called ...");
 
-	device = MKDEV(MAJ_DEV_NUM, 0);
-	int err;
-	if ((err = register_chrdev_region(device, MAX_NUM_VAULTS, "sv_data")) < 0) {
-		debug_print("%s: %d\n", "Failed to register devices", err);
-		sv_exit();  // FAILS because of __exit macro
-		return err;
+	int ret = 0;
+	if ((ret = vault_setup()) < 0) {
+		debug_print("%s:%d\n", "Vault setup failed", ret);
+		vault_cleanup();
+		return ret;
 	}
-
-	debug_print("%s\n", "Devices registered");
-
+	if ((ret = ctl_setup()) < 0) {
+		debug_print("%s:%d\n", "Control setup failed", ret);
+		vault_cleanup();
+		ctl_cleanup();
+		return ret;
+	}
+	debug_print("%s\n", "Done");
 	return 0;
 }
 
 static void __exit sv_exit(void)
 {
-	debug_print("%s\n", "Unregistering devices...");
-	unregister_chrdev_region(device, MAX_NUM_VAULTS);
-	debug_print("%s\n", "Devices unregistered");
+	debug_print("%s\n", "Exit function called...");
+	vault_cleanup();
+	ctl_cleanup();
+	debug_print("%s\n", "Done");
 }
 
 

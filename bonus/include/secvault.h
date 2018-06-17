@@ -5,13 +5,12 @@
 #include <linux/semaphore.h>
 #include <linux/cdev.h>
 #include <linux/iotctl.h>
+#include <linux/fs.h>
 
 #define MAJ_DEV_NUM 231
-
-#define CTL_MIN_DEV_NUM 0
+#define MIN_CTL_DEV_NUM 0
 #define CTL_DEV_NAME "sv_ctl"
-
-#define VAULT_MIN_DEV_NUM 1
+#define MIN_VAULT_DEV_NUM 1
 #define VAULT_DEV_NAME "sv_data"
 #define MAX_NUM_VAULTS 4
 #define MAX_VAULT_SIZE 1048576
@@ -34,7 +33,7 @@ typedef struct vault_params
 /**
  * @brief struct to define a secvault device
  */
-struct vault_dev
+typedef struct vault_dev
 {
 	char* data;				// the data stored in the vault at any given time
 	vault_params_t params;  // the paramters this vault was created with
@@ -42,12 +41,12 @@ struct vault_dev
 	struct semaphore sem;  // a semaphore to ensure exclusive access to the data
 	struct cdev cdev;	  // the actual charater device
 	uid_t creator;		   // the user id of the creator of the vault
-}
+} vault_dev_t;
 
 /**
  * @brief setup the control device of the secvaults
  * @return 0 on success, -1 otherwise
- */ 
+ */
 int ctl_setup(void);
 
 /**
@@ -92,5 +91,10 @@ int vault_erase(vid_t id);
 #define CMD_DELETE _IOR(MAJ_DEV_NUM, 1, vid_t)
 #define CMD_ERASE _IOR(MAJ_DEV_NUM, 2, vid_t)
 
+/**
+ * @brief create a new file operations structure for a secvault
+ * @return a fops struct containing all file operations for the secvault
+ */
+struct file_operations get_vault_fops(void);
 
 #endif /* SECVAULT_H */
