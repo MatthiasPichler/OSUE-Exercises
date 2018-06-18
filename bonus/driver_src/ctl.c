@@ -4,6 +4,7 @@
 #include <linux/fs.h>
 #include <linux/errno.h>
 #include <linux/kdev_t.h>
+#include <linux/uaccess.h>
 
 #include "../include/secvault.h"
 #include "../include/debug.h"
@@ -20,8 +21,9 @@ static long ctl_ioctl(struct file* filp, unsigned int cmd, unsigned long arg)
 	switch (cmd) {
 		case CMD_CREATE:
 			if (copy_from_user(
-					&params, (vault_params_t*)arg, sizeof(vault_params_t))) {
-				debug_print("%s: %d\n", "Copy from user failed");
+					&params, (vault_params_t*)arg, sizeof(vault_params_t))
+				< 0) {
+				debug_print("%s\n", "Copy from user failed");
 				return -EFAULT;
 			}
 			return vault_create(&params);
@@ -33,7 +35,7 @@ static long ctl_ioctl(struct file* filp, unsigned int cmd, unsigned long arg)
 			return vault_erase((vid_t)arg);
 			break;
 		default:
-			printk(KERNEL_WARNING "Invalid ioctl command %d", cmd);
+			printk(KERN_WARNING "Invalid ioctl command %d", cmd);
 			return -EINVAL;
 	}
 	return -EINVAL;
@@ -46,9 +48,11 @@ static struct file_operations ctl_fops = {
 
 int ctl_setup(void)
 {
+	int err;
+
 	debug_print("%s\n", "Called ctl setup");
 	ctl_devno = MKDEV(MAJ_DEV_NUM, MIN_CTL_DEV_NUM);
-	int err;
+
 	if ((err = register_chrdev_region(ctl_devno, 1, CTL_DEV_NAME)) < 0) {
 		debug_print("%s:%d\n", "Failed to register devices", err);
 		return err;

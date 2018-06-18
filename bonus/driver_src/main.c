@@ -22,19 +22,21 @@ MODULE_PARM_DESC(debug, "Enable debugging");
 
 static int __init sv_init(void)
 {
+
+	int err = 0;
+
 	debug_print("%s\n", "Init function called ...");
 
-	int ret = 0;
-	if ((ret = vault_setup()) < 0) {
-		debug_print("%s:%d\n", "Vault setup failed", ret);
+	if ((err = vault_setup()) < 0) {
+		debug_print("%s:%d\n", "Vault setup failed", err);
 		vault_cleanup();
-		return ret;
+		return err;
 	}
-	if ((ret = ctl_setup()) < 0) {
-		debug_print("%s:%d\n", "Control setup failed", ret);
+	if ((err = ctl_setup()) < 0) {
+		debug_print("%s:%d\n", "Control setup failed", err);
 		vault_cleanup();
 		ctl_cleanup();
-		return ret;
+		return err;
 	}
 	debug_print("%s\n", "Done");
 	return 0;
