@@ -1,3 +1,10 @@
+/**
+ * @file vault.c
+ * @author Matthias Pichler, 01634256
+ * @date 2018-06-19
+ * @brief OSUE bonus exercise
+ */
+
 #include <linux/types.h>
 #include <linux/cdev.h>
 #include <linux/kernel.h>
@@ -446,6 +453,78 @@ int vault_erase(vid_t id)
 		up(&vault->sem);
 		return err;
 	}
+	up(&vault->sem);
+	return 0;
+}
+
+long vault_size(vid_t id)
+{
+	vault_dev_t* vault = NULL;
+
+	debug_print("%s\n", "Called size");
+
+	if (id < 0 || id >= MAX_NUM_VAULTS) {
+		debug_print("%s: %d\n", "Invalid vault id", id);
+		return -ENODEV;
+	}
+
+	vault = &(vaults[id]);
+
+	if (!has_permission(vault)) {
+		debug_print("%s\n", "Permission denied");
+		return -EACCES;
+	}
+
+
+	return vault->size;
+}
+
+int vault_change_key(const vault_params_t* params)
+{
+	vault_dev_t* vault = NULL;
+	char tmp_key[VAULT_KEY_SIZE + 1];
+
+	debug_print("%s\n", "Called vault change key");
+
+	if (params == NULL) {
+		debug_print("%s\n", "Params are NULL");
+		return -EINVAL;
+	}
+
+	if (params->id < 0 || params->id >= MAX_NUM_VAULTS) {
+		debug_print("%s: %d\n", "Invalid vault id", params->id);
+		return -ENODEV;
+	}
+
+	vault = &(vaults[params->id]);
+	if (vault == NULL) {
+		debug_print("%s\n", "Setup error: Vault is NULL");
+		return -ENODEV;
+	}
+	if (down_interruptible(&vault->sem) < 0) {
+		debug_print("%s\n", "Could not lock semaphore");
+		return -ERESTART;
+	}
+
+	if (vault->data == NULL) {
+		debug_print("%s: %d\n", "Vault contains no data", params->id);
+		up(&vault->sem);
+		return -ENODEV;
+	}
+
+	for (int i = 0; i < VAULT_KEY_SIZE; i++) {
+		tmp_key[i] = vault->params.key[i] ^ params->key[i];
+	}
+	tmp_key[VAULT_KEY_SIZE] = '\0';
+
+	crit_sv_sym_crypt(0, vault->data, vault->data, tmp_key, vault->size);
+
+	for (int i = 0; i < VAULT_KEY_SIZE; i++) {
+		vault->params.key[i] = params->key[i];
+	}
+	vault->params.key[VAULT_KEY_SIZE] = '\0';
+
+
 	up(&vault->sem);
 	return 0;
 }

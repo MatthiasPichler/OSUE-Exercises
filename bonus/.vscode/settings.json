@@ -8,6 +8,7 @@
 		"kfree",
 		"llseek",
 		"loff",
+		"osue",
 		"printk",
 		"s",
 		"tuwien"

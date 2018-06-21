@@ -1,3 +1,10 @@
+/**
+ * @file ctl.c
+ * @author Matthias Pichler, 01634256
+ * @date 2018-06-19
+ * @brief OSUE bonus exercise
+ */
+
 #include <linux/types.h>
 #include <linux/cdev.h>
 #include <linux/kernel.h>

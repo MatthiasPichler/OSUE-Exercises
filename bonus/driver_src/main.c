@@ -1,3 +1,10 @@
+/**
+ * @file main.c
+ * @author Matthias Pichler, 01634256
+ * @date 2018-06-19
+ * @brief OSUE bonus exercise
+ */
+
 // module stuff
 #include <linux/module.h>
 #include <linux/moduleparam.h>
@@ -10,7 +17,7 @@
 #include "../include/debug.h"
 #include "../include/secvault.h"
 
-MODULE_LICENSE("Dual BSD/GPL");
+MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Matthias Pichler <e1634256@student.tuwien.ac.at>");
 MODULE_DESCRIPTION("Secure Vault");
 MODULE_VERSION("1.1");

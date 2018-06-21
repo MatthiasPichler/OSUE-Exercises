@@ -1,3 +1,10 @@
+/**
+ * @file debug.h
+ * @author Matthias Pichler, 01634256
+ * @date 2018-06-19
+ * @brief OSUE bonus exercise
+ */
+
 #ifndef DEBUG_H
 #define DEBUG_H
 

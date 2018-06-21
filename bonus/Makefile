@@ -13,6 +13,7 @@ CTL_OBJ = $(patsubst %,$(CTL_OBJ_DIR)/%,$(_CTL_OBJ))
 
 EXTRA_CFLAGS += -I$(INC_DIR)
 EXTRA_CFLAGS += -std=gnu99
+EXTRA_CFLAGS += -DKERNEL
 
 obj-m += secvault.o
 secvault-objs := $(DRV_OBJ)
@@ -20,7 +21,7 @@ secvault-objs := $(DRV_OBJ)
 all: driver svctl
 
 driver:
-	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) modules
+	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) modules 
 
 svctl: $(CTL_OBJ)
 	gcc -std=c99 -pedantic -Wall -g -D_DEFAULT_SOURCE -D_BSD_SOURCE -D_SVID_SOURCE -D_POSIX_C_SOURCE=200809L $? -o $@	
@@ -28,3 +29,4 @@ svctl: $(CTL_OBJ)
 clean:
 	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) clean
 	rm $(CTL_OBJ_DIR)/*.o svctl
+	scripts/clean.sh

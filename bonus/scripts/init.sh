@@ -1,4 +1,9 @@
-#/bin/sh
+#!/bin/bash
+
+#go to script location in order to use relative paths
+scriptdir=$(readlink -f -- "$0")
+scriptdir=${scriptdir%/*}
+cd ${scriptdir}
 
 dir_name="dev"
 module="secvault"
@@ -6,10 +11,10 @@ data_device="sv_data"
 ctl_device="sv_ctl"
 mode="666"
 
-sh ./clean.sh
+bash ./clean.sh
 
 # invoke insmod with all arguments we got
-/sbin/insmod ./$module.ko $* || exit 1
+/sbin/insmod ../${module}.ko $* || exit 1
 
 major=231
 
