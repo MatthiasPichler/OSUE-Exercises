@@ -5,13 +5,10 @@
  * @brief OSUE bonus exercise
  */
 
-// module stuff
 #include <linux/module.h>
 #include <linux/moduleparam.h>
 #include <linux/init.h>
-#include <linux/fs.h>
 #include <linux/kernel.h>
-#include <linux/types.h>
 #include <linux/stddef.h>
 
 #include "../include/debug.h"
@@ -34,12 +31,15 @@ static int __init sv_init(void)
 
 	debug_print("%s\n", "Init function called ...");
 
-	if ((err = vault_setup()) < 0) {
+	err = vault_setup();
+	if (err < 0) {
 		debug_print("%s:%d\n", "Vault setup failed", err);
 		vault_cleanup();
 		return err;
 	}
-	if ((err = ctl_setup()) < 0) {
+
+	err = ctl_setup();
+	if (err < 0) {
 		debug_print("%s:%d\n", "Control setup failed", err);
 		vault_cleanup();
 		ctl_cleanup();

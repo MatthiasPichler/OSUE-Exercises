@@ -5,10 +5,7 @@
  * @brief OSUE bonus exercise
  */
 
-#include <linux/types.h>
-#include <linux/cdev.h>
 #include <linux/kernel.h>
-#include <linux/fs.h>
 #include <linux/errno.h>
 #include <linux/kdev_t.h>
 #include <linux/uaccess.h>
@@ -19,36 +16,53 @@
 static dev_t ctl_devno;
 static struct cdev ctl_cdev;
 
-static bool flag_init = false;
+static bool flag_init;
 
-static long ctl_ioctl(struct file* filp, unsigned int cmd, unsigned long arg)
+static long ctl_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 {
-	vault_params_t params;
+	struct vault_params params;
+
+	flag_init = false;
 
 	switch (cmd) {
-		case CMD_CREATE:
-			if (copy_from_user(
-					&params, (vault_params_t*)arg, sizeof(vault_params_t))
-				< 0) {
-				debug_print("%s\n", "Copy from user failed");
-				return -EFAULT;
-			}
-			return vault_create(&params);
-			break;
-		case CMD_DELETE:
-			return vault_delete((vid_t)arg);
-			break;
-		case CMD_ERASE:
-			return vault_erase((vid_t)arg);
-			break;
-		default:
-			printk(KERN_WARNING "Invalid ioctl command %d", cmd);
-			return -EINVAL;
+	case CMD_CREATE:
+		debug_print("%s\n", "Create case");
+		if (copy_from_user(&params, (struct vault_params *)arg,
+				   sizeof(struct vault_params))
+		    > 0) {
+			debug_print("%s\n", "Copy from user failed");
+			return -EFAULT;
+		}
+		debug_print("Params: id: %d, size: %lu, key: %s\n", params.id,
+			    params.max_size, params.key);
+		return vault_create(&params);
+	case CMD_DELETE:
+		debug_print("%s\n", "Delete case");
+		return vault_delete((uint8_t)arg);
+	case CMD_ERASE:
+		debug_print("%s\n", "Erase case");
+		return vault_erase((uint8_t)arg);
+	case CMD_CHANGE_KEY:
+		debug_print("%s\n", "Change case");
+		if (copy_from_user(&params, (struct vault_params *)arg,
+				   sizeof(struct vault_params))
+		    > 0) {
+			debug_print("%s\n", "Copy from user failed");
+			return -EFAULT;
+		}
+		debug_print("Params: id: %d, key: %s\n", params.id, params.key);
+		return vault_change_key(&params);
+	case CMD_SIZE:
+		debug_print("%s\n", "Size case");
+		return vault_size((uint8_t)arg);
+	default:
+		pr_warn("Invalid ioctl command %d", cmd);
+		return -EINVAL;
 	}
 	return -EINVAL;
 }
 
-static struct file_operations ctl_fops = {
+static const struct file_operations ctl_fops = {
 	.owner = THIS_MODULE,
 	.unlocked_ioctl = ctl_ioctl,
 };
@@ -60,7 +74,8 @@ int ctl_setup(void)
 	debug_print("%s\n", "Called ctl setup");
 	ctl_devno = MKDEV(MAJ_DEV_NUM, MIN_CTL_DEV_NUM);
 
-	if ((err = register_chrdev_region(ctl_devno, 1, CTL_DEV_NAME)) < 0) {
+	err = register_chrdev_region(ctl_devno, 1, CTL_DEV_NAME);
+	if (err < 0) {
 		debug_print("%s:%d\n", "Failed to register devices", err);
 		return err;
 	}
@@ -68,7 +83,8 @@ int ctl_setup(void)
 	cdev_init(&ctl_cdev, &ctl_fops);
 	ctl_cdev.owner = THIS_MODULE;
 	ctl_cdev.ops = &ctl_fops;
-	if ((err = cdev_add(&ctl_cdev, ctl_devno, 1)) < 0) {
+	err = cdev_add(&ctl_cdev, ctl_devno, 1);
+	if (err < 0) {
 		debug_print("%s:%d\n", "Failed to add devices", err);
 		return err;
 	}
@@ -79,8 +95,10 @@ int ctl_setup(void)
 void ctl_cleanup(void)
 {
 	debug_print("%s\n", "Called ctl cleanup");
-	if (flag_init) {
+
+	if (flag_init)
 		cdev_del(&ctl_cdev);
-	}
+
+
 	unregister_chrdev_region(ctl_devno, 1);
 }

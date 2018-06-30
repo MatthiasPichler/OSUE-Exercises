@@ -19,15 +19,14 @@
 /**
  * @brief struct to define a secvault device
  */
-typedef struct vault_dev
-{
-	char* data;				// the data stored in the vault at any given time
-	vault_params_t params;  // the paramters this vault was created with
-	size_t size;			// the current size of the vault
-	struct semaphore sem;  // a semaphore to ensure exclusive access to the data
-	struct cdev cdev;	  // the actual charater device
-	uid_t creator;		   // the user id of the creator of the vault
-} vault_dev_t;
+struct vault_dev {
+	char *data;
+	struct vault_params params;
+	size_t size;
+	struct semaphore sem;
+	struct cdev cdev;
+	kuid_t creator;
+};
 
 /**
  * @brief setup the control device of the secvaults
@@ -56,35 +55,35 @@ void vault_cleanup(void);
  * @param params the creation paramters for this vault
  * @return 0 on success, a negative error code on failure
  */
-int vault_create(const vault_params_t* params);
+int vault_create(const struct vault_params *params);
 
 /**
  * @brief delete the vault with the given id
  * @param id the id of the vault to delete
  * @return 0 on success, a negative error code on failure
  */
-int vault_delete(vid_t id);
+int vault_delete(uint8_t id);
 
 /**
  * @brief erase all data of the vault with the given id
  * @param id the id of the vault to erase
  * @return 0 on success, a negative error code on failure
  */
-int vault_erase(vid_t id);
+int vault_erase(uint8_t id);
 
 /**
  * @brief get the current size of a vault
  * @param id the id of the vault
  * @return the size on success, a negative error code on failure
  */
-long vault_size(vid_t id);
+long vault_size(uint8_t id);
 
 /**
  * @brief change the key of a vault and re-encrypt the data
  * @param params the change paramters for this vault
  * @return 0 on success, a negative error code on failure
  */
-int vault_change_key(const vault_params_t* params);
+int vault_change_key(const struct vault_params *params);
 
 
 #endif /* SECVAULT_H */

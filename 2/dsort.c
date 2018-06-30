@@ -5,11 +5,6 @@
  * @brief OSUE Exercise 2
  */
 
-#define SAFE_DELETE(p) \
-	if (p != NULL) {   \
-		free(p);       \
-	}                  \
-	p = NULL;
 
 // standard library, i/o, etc
 #include <stdio.h>

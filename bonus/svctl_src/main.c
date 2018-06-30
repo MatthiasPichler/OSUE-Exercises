@@ -11,27 +11,31 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <string.h>
 #include <errno.h>
 
 #include "../include/common.h"
 
 static int file_desc;
-static vault_action_t action;
-static char* p_name = NULL;
-static vault_params_t params;
+static unsigned int action;
+static char *p_name = NULL;
+static struct vault_params params;
 
 /**
  * @brief print the usage message of the program to STDOUT
  */
 static void usage(void)
 {
-	fprintf(stdout, "svctl [-c <size>|-e|-d] <secvault id>\n");
-	fprintf(
-		stdout,
+	fprintf(stdout, "svctl [-c <size>|-e|-d|-k] <secvault id>\n");
+	fprintf(stdout,
 		"-c\t create a new secvault with the specified size and given id\n");
 	fprintf(stdout, "-e\t erase the vault with the given id\n");
-	fprintf(stdout, "-e\t delete the vault with the given id\n");
+	fprintf(stdout, "-d\t delete the vault with the given id\n");
+	fprintf(stdout, "-k\t change the key of the vault with the given id\n");
+	fprintf(stdout,
+		"if no option is specified print the size of the vault with the given "
+		"id\n");
 }
 
 /**
@@ -40,9 +44,9 @@ static void usage(void)
  * @param val the pointer that will hold the integer value after conversion
  * @return 0 on success, -1 otherwise
  */
-static int str2int(const char* str, long* val)
+static int str2int(const char *str, long *val)
 {
-	char* endptr;
+	char *endptr;
 	errno = 0;
 	*val = strtol(str, &endptr, 10);
 
@@ -65,63 +69,72 @@ static int str2int(const char* str, long* val)
  * @param argv the argument strings passed to the program
  * @return 0 on success, -1 otherwise
  */
-static int parse_args(int argc, char* argv[])
+static int parse_args(int argc, char *argv[])
 {
 	p_name = argv[0];
 
 	bool flag = false;
-	size_t size = 0;
+	size_t size = 0L;
 	int c, id;
 	while ((c = getopt(argc, argv, "c:ked")) != -1) {
 		switch (c) {
-			case 'c':
-				if (flag) {
-					fprintf(stderr, "%s: Wrong number of arguments\n", p_name);
-					return -1;
-				}
-
-				action = create;
-				if (str2int(optarg, (long*)&size) < 0) {
-					fprintf(stderr, "%s: Malformed size\n", p_name);
-					return -1;
-				}
-				if (size < 1 || size > MAX_VAULT_SIZE) {
-					fprintf(stderr, "%s: Invalid size\n", p_name);
-					return -1;
-				}
-				break;
-			case 'k':
-				if (flag) {
-					fprintf(stderr, "%s: Wrong number of arguments\n", p_name);
-					return -1;
-				}
-
-				action = change_key;
-				break;
-			case 'e':
-				if (flag) {
-					fprintf(stderr, "%s: Wrong number of arguments\n", p_name);
-					return -1;
-				}
-
-				action = erase;
-				break;
-			case 'd':
-				if (flag) {
-					fprintf(stderr, "%s: Wrong number of arguments\n", p_name);
-					return -1;
-				}
-
-				action = delete;
-				break;
-			default:
+		case 'c':
+			if (flag) {
+				fprintf(stderr,
+					"%s: Wrong number of arguments\n",
+					p_name);
 				return -1;
-				break;
+			}
+			flag = true;
+			action = CMD_CREATE;
+			if (str2int(optarg, (long *)&size) < 0) {
+				fprintf(stderr, "%s: Malformed size\n", p_name);
+				return -1;
+			}
+			if (size < 1 || size > MAX_VAULT_SIZE) {
+				fprintf(stderr, "%s: Invalid size\n", p_name);
+				return -1;
+			}
+			params.max_size = size;
+			break;
+		case 'k':
+			if (flag) {
+				fprintf(stderr,
+					"%s: Wrong number of arguments\n",
+					p_name);
+				return -1;
+			}
+			flag = true;
+			action = CMD_CHANGE_KEY;
+			break;
+		case 'e':
+			if (flag) {
+				fprintf(stderr,
+					"%s: Wrong number of arguments\n",
+					p_name);
+				return -1;
+			}
+			flag = true;
+			action = CMD_ERASE;
+			break;
+		case 'd':
+			if (flag) {
+				fprintf(stderr,
+					"%s: Wrong number of arguments\n",
+					p_name);
+				return -1;
+			}
+			flag = true;
+			action = CMD_DELETE;
+			break;
+		default:
+			return -1;
+			break;
 		}
 	}
 
 	if (optind < argc) {
-		if (str2int(argv[optind], (long*)&id) < 0) {
+		if (str2int(argv[optind], (long *)&id) < 0) {
 			fprintf(stderr, "%s: Malformed id\n", p_name);
 			return -1;
 		}
@@ -135,11 +148,11 @@ static int parse_args(int argc, char* argv[])
 	}
 
 	params.id = id;
-	params.max_size = size;
+
 	memset(params.key, 0, VAULT_KEY_SIZE + 1);
 
 	if (!flag) {
-		action = print_size;
+		action = CMD_SIZE;
 	}
 
 	if (argc - optind > 1) {
@@ -147,10 +160,12 @@ static int parse_args(int argc, char* argv[])
 		return -1;
 	}
 
-	if (action == create || action == change_key) {
+	if (action == CMD_CREATE || action == CMD_CHANGE_KEY) {
 		fprintf(stdout, "Please enter key: ");
-		for (int i = 0; i < VAULT_KEY_SIZE; i++) {
-			if ((c = getchar()) == EOF) {
+		int i;
+		for (i = 0; i < VAULT_KEY_SIZE; i++) {
+			c = getchar();
+			if (c == EOF || c == '\n') {
 				break;
 			}
 			params.key[i] = c;
@@ -168,7 +183,7 @@ static void exit_handler(void)
 	close(file_desc);
 }
 
-int main(int argc, char* argv[])
+int main(int argc, char *argv[])
 {
 	if (atexit(exit_handler) < 0) {
 		fprintf(stderr, "Could not set exit function\n");
@@ -188,51 +203,42 @@ int main(int argc, char* argv[])
 
 	long ret;
 	switch (action) {
-		case create:
-			if (ioctl(file_desc, CMD_CREATE, &params) < 0) {
-				fprintf(
-					stderr,
-					"%s: Creation failed: %s\n",
-					p_name,
-					strerror(errno));
-				return EXIT_FAILURE;
-			}
-			break;
-		case erase:
-			if (ioctl(file_desc, CMD_ERASE, params.id) < 0) {
-				fprintf(
-					stderr, "%s: Erase failed: %s\n", p_name, strerror(errno));
-				return EXIT_FAILURE;
-			}
-			break;
-		case delete:
-			if (ioctl(file_desc, CMD_DELETE, params.id) < 0) {
-				fprintf(
-					stderr, "%s: Delete failed: %s\n", p_name, strerror(errno));
-				return EXIT_FAILURE;
-			}
-			break;
-		case print_size:
-			if ((ret = ioctl(file_desc, CMD_SIZE, params.id) < 0)) {
-				fprintf(
-					stderr,
-					"%s: Query size failed: %s\n",
-					p_name,
-					strerror(errno));
-				return EXIT_FAILURE;
-			}
-			fprintf(stdout, "%s: Size= %ld", p_name, ret);
-			break;
-		case change_key:
-			if (ioctl(file_desc, CMD_CHANGE_KEY, &params) < 0) {
-				fprintf(
-					stderr,
-					"%s: change key failed: %s\n",
-					p_name,
-					strerror(errno));
-				return EXIT_FAILURE;
-			}
-			break;
+	case CMD_CREATE:
+		if (ioctl(file_desc, CMD_CREATE, &params) < 0) {
+			fprintf(stderr, "%s: Creation failed: %s\n", p_name,
+				strerror(errno));
+			return EXIT_FAILURE;
+		}
+		break;
+	case CMD_ERASE:
+		if (ioctl(file_desc, CMD_ERASE, params.id) < 0) {
+			fprintf(stderr, "%s: Erase failed: %s\n", p_name,
+				strerror(errno));
+			return EXIT_FAILURE;
+		}
+		break;
+	case CMD_DELETE:
+		if (ioctl(file_desc, CMD_DELETE, params.id) < 0) {
+			fprintf(stderr, "%s: Delete failed: %s\n", p_name,
+				strerror(errno));
+			return EXIT_FAILURE;
+		}
+		break;
+	case CMD_SIZE:
+		if ((ret = ioctl(file_desc, CMD_SIZE, params.id)) < 0) {
+			fprintf(stderr, "%s: Query size failed: %s\n", p_name,
+				strerror(errno));
+			return EXIT_FAILURE;
+		}
+		fprintf(stdout, "%s: Size: %ld\n", p_name, ret);
+		break;
+	case CMD_CHANGE_KEY:
+		if (ioctl(file_desc, CMD_CHANGE_KEY, &params) < 0) {
+			fprintf(stderr, "%s: change key failed: %s\n", p_name,
+				strerror(errno));
+			return EXIT_FAILURE;
+		}
+		break;
 	}
 
 	return EXIT_SUCCESS;

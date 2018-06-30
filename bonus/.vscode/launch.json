@@ -12,7 +12,7 @@
             "args": [
                 "-c",
                 "1024",
-                "0"
+                "1"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
